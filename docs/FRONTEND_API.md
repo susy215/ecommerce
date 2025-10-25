@@ -106,9 +106,9 @@ Notas
 
 ---
 
-## Carrito y checkout
+## Carrito, checkout y pagos
 
-El carrito vive en el frontend (localStorage/estado). El backend solo recibe el pedido final en un único endpoint "checkout" y crea la compra con los items.
+El carrito vive en el frontend (localStorage/estado). El backend solo recibe el pedido final en un único endpoint "checkout" y crea la compra con los items. Para el pago, se integra Stripe Checkout; también queda un endpoint de pago manual como respaldo.
 
 1) Checkout (crear compra)
 - POST /api/compra/compras/checkout/
@@ -159,22 +159,45 @@ El carrito vive en el frontend (localStorage/estado). El backend solo recibe el 
   - {"detail": "Cantidad debe ser mayor a 0"}
   - {"detail": "Producto {id} no existe o inactivo"}
 
-2) Pagar compra
+2) Crear sesión de pago (Stripe Checkout)
+- POST /api/compra/compras/{id}/stripe_session/
+- Autenticación: requerida (dueño o admin)
+- Body opcional:
+  {
+    "success_url": "https://midominio.com/checkout/success?compra=123",
+    "cancel_url": "https://midominio.com/checkout/cancel?compra=123"
+  }
+  Si no se envían, el backend usa FRONTEND_URL del servidor (por defecto http://localhost:5173).
+- Respuesta 200:
+  { "id": "cs_test_a1...", "url": "https://checkout.stripe.com/c/pay/cs_test_a1..." }
+- Uso en frontend:
+  - Redirige al usuario a la URL recibida (window.location.href = response.url)
+  - Al completar el pago, Stripe redirige a success_url; el backend marcará la compra como pagada vía webhook.
+- Posibles errores:
+  - 400 {"detail": "La compra debe tener items y total > 0"}
+  - 500 {"detail": "Falta STRIPE_API_KEY en el servidor"} (revisar configuración)
+
+3) Descargar comprobante (PDF)
+- GET /api/compra/compras/{id}/receipt/
+- Autenticación: requerida (dueño o admin)
+- Respuesta 200: application/pdf (adjunto)
+
+4) Pago manual (respaldo/opcional)
 - POST /api/compra/compras/{id}/pay/
 - Autenticación: requerida
-- Body: { "referencia": "stripe_pi_123" }
+- Body: { "referencia": "transfer_123" }
 - Respuesta 200: compra actualizada con pago_referencia y pagado_en
 - Errores 400:
   - {"detail": "El total debe ser mayor a 0"}
   - {"detail": "La compra ya está pagada"}
   - {"detail": "Referencia de pago requerida"}
 
-3) Mis compras
+5) Mis compras
 - GET /api/compra/compras/?page=1&ordering=-fecha
 - Autenticación: requerida
 - Respuesta: listado paginado de compras del usuario
 
-4) Detalle de compra
+6) Detalle de compra
 - GET /api/compra/compras/{id}/
 - Autenticación: requerida (solo dueño o admin)
 
@@ -182,6 +205,7 @@ Notas importantes
 - No existe CRUD de items desde el frontend. El único lugar donde se envían items es en checkout.
 - Si el usuario no tiene perfil de Cliente, el backend lo crea automáticamente al hacer checkout.
 - Para guest checkout (sin login) NO está implementado en esta versión.
+- No necesitas llamar al webhook de Stripe: el servidor lo expone en /api/compra/stripe/webhook/ y Stripe lo invoca automáticamente.
 
 ---
 
@@ -249,10 +273,11 @@ Ejemplo de validación de campos:
 1) Usuario navega categorías y productos (con search/ordering)
 2) Añade productos al carrito (solo en frontend)
 3) En checkout:
-   - Si no está logueado: mostrar login (POST /api/usuarios/token/)
-   - Con token: POST /api/compra/compras/checkout/ con items
-4) Redirige a pasarela; al volver, POST /api/compra/compras/{id}/pay/ con "referencia"
-5) Mostrar detalle de compra y lista de compras del usuario
+  - Si no está logueado: mostrar login (POST /api/usuarios/token/)
+  - Con token: POST /api/compra/compras/checkout/ con items
+4) Crear sesión de pago: POST /api/compra/compras/{id}/stripe_session/ y redirigir a response.url
+5) Stripe redirige a success_url; el backend marca la compra como pagada vía webhook
+6) Mostrar detalle de compra; ofrecer "Descargar comprobante" (GET /api/compra/compras/{id}/receipt/)
 
 Cosas que NO implementar en el front:
 - CRUD de items contra el backend (no existe)
@@ -278,12 +303,14 @@ POST /api/compra/compras/checkout/
 }
 -> Respuesta incluye id de compra y total
 
-// Pagar
-POST /api/compra/compras/{id}/pay/
-{ "referencia": "stripe_pi_123" }
+// Crear sesión de pago (Stripe)
+POST /api/compra/compras/{id}/stripe_session/
+-> { "url": "https://checkout.stripe.com/c/pay/..." }
+// Redirigir en el frontend a esa URL
 
 ---
 
 Notas finales
 - Si necesitas un endpoint de "guest checkout", se puede agregar luego; hoy todo el checkout requiere usuario autenticado.
 - Para probar rápidamente, usa /api/docs/ (Swagger) y pega el token en el botón Authorize.
+- Configuración en servidor: STRIPE_SECRET_KEY (secreta, sk_...), STRIPE_PUBLISHABLE_KEY (opcional para frontend, pk_...), STRIPE_WEBHOOK_SECRET, STRIPE_CURRENCY (opcional), FRONTEND_URL.

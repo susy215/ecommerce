@@ -198,7 +198,9 @@ else:
 CSRF_TRUSTED_ORIGINS = _csv_env('CSRF_TRUSTED_ORIGINS', '')
 
 # Stripe / pagos
-STRIPE_API_KEY = os.environ.get('STRIPE_API_KEY', '')
+# Usa STRIPE_SECRET_KEY (recomendado). Mantiene compatibilidad con STRIPE_API_KEY
+STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', os.environ.get('STRIPE_API_KEY', ''))
+STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')

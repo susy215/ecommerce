@@ -122,9 +122,11 @@ class CompraViewSet(viewsets.ModelViewSet):
         if compra.total <= 0 or compra.items.count() == 0:
             return Response({'detail': 'La compra debe tener items y total > 0'}, status=400)
 
-        stripe.api_key = settings.STRIPE_API_KEY
+        stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
         if not stripe.api_key:
-            return Response({'detail': 'Falta STRIPE_API_KEY en el servidor'}, status=500)
+            return Response({'detail': 'Falta STRIPE_SECRET_KEY en el servidor (clave secreta sk_...)'}, status=500)
+        if stripe.api_key.startswith('pk_'):
+            return Response({'detail': 'Clave inválida: estás usando una publishable key (pk_...). Configura STRIPE_SECRET_KEY con tu clave secreta (sk_...).'}, status=500)
 
         success_url = request.data.get('success_url') or f"{getattr(settings, 'FRONTEND_URL', '')}/checkout/success?compra={compra.id}"
         cancel_url = request.data.get('cancel_url') or f"{getattr(settings, 'FRONTEND_URL', '')}/checkout/cancel?compra={compra.id}"
@@ -170,6 +172,8 @@ class StripeWebhookView(APIView):
             import stripe
         except Exception:
             return Response({'detail': 'Stripe no instalado'}, status=500)
+        # Asegura que la API key esté configurada (no necesaria para verificar firma, pero útil si se consulta a Stripe)
+        stripe.api_key = getattr(settings, 'STRIPE_SECRET_KEY', '')
 
         sig_header = request.META.get('HTTP_STRIPE_SIGNATURE', '')
         webhook_secret = settings.STRIPE_WEBHOOK_SECRET
