@@ -1,0 +1,115 @@
+{% extends "admin/base_site.html" %}
+{% load i18n %}
+
+{% block extrastyle %}
+<style>
+  .pred-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .pred-card { background: #fff; border: 1px solid #e5e7eb; border-radius: 8px; padding: 12px; box-shadow: 0 1px 1px rgba(0,0,0,.03); }
+  .pred-kpis { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin: 12px 0 16px; }
+  .pred-kpi { background:#f9fafb; border:1px solid #e5e7eb; border-radius:8px; padding:10px; }
+  .pred-kpi h4 { margin: 0 0 6px; font-weight:600; font-size: 13px; color:#374151; }
+  .pred-kpi .val { font-size: 18px; font-weight: 700; color:#111827; }
+  .pred-toolbar { display:flex; gap:8px; align-items:center; margin: 8px 0 16px; }
+  .pred-toolbar .button { height:28px; line-height: 26px; padding:0 10px; }
+  .pred-table { width:100%; border-collapse: collapse; font-size: 12px; }
+  .pred-table th, .pred-table td { border:1px solid #e5e7eb; padding:6px 8px; text-align:left; }
+  .pred-table thead { background:#f3f4f6; }
+  @media (max-width: 1024px){ .pred-grid { grid-template-columns: 1fr; } .pred-kpis{ grid-template-columns:1fr; } }
+
+  /* Dark mode adjustments */
+  @media (prefers-color-scheme: dark) {
+    .pred-card { background:#111827; border-color:#374151; box-shadow:none; }
+    .pred-kpi { background:#1f2937; border-color:#374151; }
+    .pred-kpi h4 { color:#e5e7eb; }
+    .pred-kpi .val { color:#f9fafb; }
+    .pred-table th, .pred-table td { border-color:#374151; color:#e5e7eb; }
+    .pred-table thead { background:#374151; }
+    .content h1, .pred-card h3 { color:#f9fafb; }
+    .pred-toolbar label { color:#e5e7eb; }
+    .pred-toolbar input[type="number"] {
+      background:#111827; color:#f9fafb; border:1px solid #4b5563; border-radius:6px; padding:2px 6px;
+    }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="content">
+  <h1>{{ title }}</h1>
+  <div class="pred-toolbar">
+    <a href="{% url 'admin:index' %}" class="button">← Inicio Admin</a>
+    <form method="get" style="display:flex; gap:10px; align-items:center; margin:0;">
+    <label>Días histórico: <input type="number" name="dias_hist" value="{{ dias_hist }}" min="7" max="365"/></label>
+    <label style="margin-left:12px;">Días a predecir: <input type="number" name="dias_forecast" value="{{ dias_forecast }}" min="1" max="60"/></label>
+    <label style="margin-left:12px;">Ventana (media móvil): <input type="number" name="ventana" value="{{ ventana }}" min="1" max="30"/></label>
+      <button type="submit" class="button">Actualizar</button>
+      <button type="submit" class="button" name="download" value="csv">Descargar CSV</button>
+    </form>
+  </div>
+
+  <div class="pred-kpis">
+    <div class="pred-kpi"><h4>Total histórico</h4><div class="val">{{ historico_total }}</div></div>
+    <div class="pred-kpi"><h4>Promedio histórico</h4><div class="val">{{ historico_promedio }}</div></div>
+    <div class="pred-kpi"><h4>Último día</h4><div class="val">{{ historico_ultimo_dia }}</div></div>
+  </div>
+
+  <div class="pred-kpis">
+    <div class="pred-kpi"><h4>Total pronóstico</h4><div class="val">{{ forecast_total }}</div></div>
+    <div class="pred-kpi"><h4>Promedio pronóstico</h4><div class="val">{{ forecast_promedio }}</div></div>
+    <div class="pred-kpi"><h4>Horizonte (días)</h4><div class="val">{{ dias_forecast }}</div></div>
+  </div>
+
+  <div class="pred-grid">
+    <div class="pred-card">
+      <h3 style="margin-top:0;">Histórico</h3>
+      <table class="pred-table">
+        <thead>
+          <tr><th>Fecha</th><th>Total</th></tr>
+        </thead>
+        <tbody>
+        {% for p in historico %}
+          <tr><td>{{ p.fecha }}</td><td>{{ p.total }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+    <div class="pred-card">
+      <h3 style="margin-top:0;">Pronóstico</h3>
+      <table class="pred-table">
+        <thead>
+          <tr><th>Fecha</th><th>Total (estimado)</th></tr>
+        </thead>
+        <tbody>
+        {% for f in forecast %}
+          <tr><td>{{ f.fecha }}</td><td>{{ f.total }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <h3>Histórico</h3>
+  <table class="adminlist">
+    <thead>
+      <tr><th>Fecha</th><th>Total</th></tr>
+    </thead>
+    <tbody>
+    {% for p in historico %}
+      <tr><td>{{ p.fecha }}</td><td>{{ p.total }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+
+  <h3 style="margin-top:20px;">Pronóstico</h3>
+  <table class="adminlist">
+    <thead>
+      <tr><th>Fecha</th><th>Total (estimado)</th></tr>
+    </thead>
+    <tbody>
+    {% for f in forecast %}
+      <tr><td>{{ f.fecha }}</td><td>{{ f.total }}</td></tr>
+    {% endfor %}
+    </tbody>
+  </table>
+</div>
+{% endblock %}
