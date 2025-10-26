@@ -11,8 +11,8 @@ class Cliente(models.Model):
 		related_name='perfil_cliente',
 		help_text='Usuario asociado (si el cliente tiene cuenta)'
 	)
-	nombre = models.CharField(max_length=150)
-	email = models.EmailField(blank=True, null=True)
+	nombre = models.CharField(max_length=150, db_index=True)
+	email = models.EmailField(blank=True, null=True, db_index=True)
 	telefono = models.CharField(max_length=20, blank=True)
 	direccion = models.CharField(max_length=255, blank=True)
 	asignado_a = models.ForeignKey(
@@ -30,6 +30,11 @@ class Cliente(models.Model):
 		ordering = ['-fecha_creacion']
 		verbose_name = 'Cliente'
 		verbose_name_plural = 'Clientes'
+		indexes = [
+			models.Index(fields=['usuario']),
+			models.Index(fields=['asignado_a']),
+			models.Index(fields=['-fecha_creacion']),
+		]
 
 	def __str__(self):
 		return self.nombre
