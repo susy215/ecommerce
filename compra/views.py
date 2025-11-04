@@ -190,6 +190,24 @@ class CompraViewSet(viewsets.ModelViewSet):
                     logger.info(f'Promoción {promocion.codigo} aplicada a compra #{compra.id}. Descuento: ${descuento}')
 
             logger.info(f'Compra #{compra.id} creada exitosamente por usuario {user.username}')
+            
+            # ✅ Enviar notificación push de compra creada
+            try:
+                from notificaciones.push_service import push_service
+                push_service.send_notification(
+                    usuario=user,
+                    titulo='🛒 Carrito confirmado',
+                    mensaje=f'Tu pedido #{compra.id} ha sido creado. Procede al pago para completar tu compra.',
+                    tipo='otro',
+                    datos_extra={
+                        'compra_id': compra.id,
+                        'total': float(compra.total)
+                    },
+                    url=f'/mis-pedidos/{compra.id}'
+                )
+            except Exception as e:
+                logger.warning(f'No se pudo enviar notificación push: {str(e)}')
+            
             return Response(
                 CompraSerializer(compra).data,
                 status=status.HTTP_201_CREATED
@@ -241,6 +259,14 @@ class CompraViewSet(viewsets.ModelViewSet):
         compra.save(update_fields=['pago_referencia', 'pagado_en'])
         
         logger.info(f'Compra #{compra.id} marcada como pagada')
+        
+        # ✅ Enviar notificación push de pago confirmado
+        try:
+            from notificaciones.push_service import push_service
+            push_service.send_compra_exitosa(compra)
+        except Exception as e:
+            logger.warning(f'No se pudo enviar notificación push: {str(e)}')
+        
         return Response(CompraSerializer(compra).data)
 
     @action(detail=True, methods=['post'], permission_classes=[permissions.IsAuthenticated, IsOwnerOrAdmin])
@@ -383,6 +409,13 @@ class StripeWebhookView(APIView):
                             'stripe_payment_intent'
                         ])
                         logger.info(f'Compra #{compra_id} pagada via Stripe webhook')
+                        
+                        # ✅ Enviar notificación push de pago confirmado vía Stripe
+                        try:
+                            from notificaciones.push_service import push_service
+                            push_service.send_compra_exitosa(compra)
+                        except Exception as e:
+                            logger.warning(f'No se pudo enviar notificación push: {str(e)}')
                         
                 except Compra.DoesNotExist:
                     logger.warning(f'Compra {compra_id} no encontrada en webhook')

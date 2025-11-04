@@ -2,23 +2,37 @@
 {% load static %}
 
 {% block extrastyle %}
+{{ block.super }}
 <style>
     .ejemplo-item {
-        cursor: pointer;
-        padding: 8px 10px;
-        margin: 4px 0;
-        border-left: 3px solid var(--primary);
+        padding: 10px 12px;
+        margin: 5px 0;
+        border-left: 3px solid var(--link-fg);
+        background: var(--body-bg);
+        border-radius: 2px;
+        transition: background-color 0.15s ease;
     }
     .ejemplo-item:hover {
         background: var(--darkened-bg);
-    }
-    .historial-item {
         cursor: pointer;
-        padding: 10px;
-        border-bottom: 1px solid var(--hairline-color);
     }
-    .historial-item:hover {
+    .historial-table {
+        width: 100%;
+    }
+    .historial-row {
+        border-bottom: 1px solid var(--hairline-color);
+        transition: background-color 0.15s ease;
+    }
+    .historial-row:hover {
         background: var(--darkened-bg);
+        cursor: pointer;
+    }
+    .historial-row td {
+        padding: 12px;
+        vertical-align: top;
+    }
+    .ejemplo-list {
+        padding: 0 15px 15px 15px;
     }
 </style>
 {% endblock %}
@@ -80,9 +94,9 @@
     <div class="module">
         <h2>Ejemplos de consultas</h2>
         <p style="padding: 10px 15px;" class="help">Haz clic en cualquier ejemplo para usarlo:</p>
-        <div style="padding: 0 15px 15px 15px;">
+        <div class="ejemplo-list">
             {% for ejemplo in ejemplos %}
-            <div class="ejemplo-item" onclick="document.getElementById('prompt').value = '{{ ejemplo }}'; document.getElementById('prompt').focus();">
+            <div class="ejemplo-item" data-ejemplo="{{ ejemplo|escape }}">
                 {{ ejemplo }}
             </div>
             {% endfor %}
@@ -92,24 +106,30 @@
     {% if historial %}
     <div class="module">
         <h2>Historial Reciente</h2>
-        <table style="width: 100%;">
+        <table class="historial-table">
+            <thead>
+                <tr>
+                    <th scope="col" style="width: 70%;">Consulta</th>
+                    <th scope="col" style="text-align: right;">Estado</th>
+                </tr>
+            </thead>
             <tbody>
             {% for consulta in historial %}
-            <tr class="historial-item" onclick="document.getElementById('prompt').value = '{{ consulta.prompt|escapejs }}'; document.getElementById('prompt').focus();">
-                <td style="width: 70%;">
+            <tr class="historial-row" data-prompt="{{ consulta.prompt|escape }}">
+                <td>
                     <strong>{{ consulta.prompt|truncatewords:20 }}</strong>
-                    <div class="quiet" style="font-size: 11px; margin-top: 3px;">
+                    <div class="quiet" style="font-size: 11px; margin-top: 5px;">
                         {{ consulta.fecha_consulta|date:"d/m/Y H:i" }}
                         {% if consulta.tiempo_ejecucion %}
                         - {{ consulta.tiempo_ejecucion|floatformat:2 }}s
                         {% endif %}
                     </div>
                 </td>
-                <td style="text-align: right;">
+                <td style="text-align: right; vertical-align: middle;">
                     {% if consulta.error %}
-                    <span style="color: var(--error-fg);">✗ Error</span>
+                    <span style="color: var(--error-fg); font-weight: 600;">✗ Error</span>
                     {% else %}
-                    <span style="color: var(--success-fg);">✓ Exitoso</span>
+                    <span style="color: var(--success-fg); font-weight: 600;">✓ Exitoso</span>
                     {% endif %}
                 </td>
             </tr>
@@ -120,4 +140,37 @@
     {% endif %}
     
 </div>
+{% endblock %}
+
+{% block extrahead %}
+{{ block.super }}
+<script>
+(function() {
+    'use strict';
+    
+    // Ejemplos de consultas
+    document.querySelectorAll('.ejemplo-item').forEach(function(item) {
+        item.addEventListener('click', function() {
+            var ejemplo = this.getAttribute('data-ejemplo');
+            var promptField = document.getElementById('prompt');
+            if (promptField) {
+                promptField.value = ejemplo;
+                promptField.focus();
+            }
+        });
+    });
+    
+    // Historial
+    document.querySelectorAll('.historial-row').forEach(function(row) {
+        row.addEventListener('click', function() {
+            var prompt = this.getAttribute('data-prompt');
+            var promptField = document.getElementById('prompt');
+            if (promptField) {
+                promptField.value = prompt;
+                promptField.focus();
+            }
+        });
+    });
+})();
+</script>
 {% endblock %}

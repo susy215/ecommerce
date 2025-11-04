@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'clientes',
     'reportes',
     'promociones',
+    'notificaciones',
 ]
 
 MIDDLEWARE = [
@@ -225,6 +226,14 @@ STRIPE_PUBLISHABLE_KEY = os.environ.get('STRIPE_PUBLISHABLE_KEY', '')
 STRIPE_WEBHOOK_SECRET = os.environ.get('STRIPE_WEBHOOK_SECRET', '')
 STRIPE_CURRENCY = os.environ.get('STRIPE_CURRENCY', 'usd')
 FRONTEND_URL = os.environ.get('FRONTEND_URL', 'http://localhost:5173')
+
+# Notificaciones Push (VAPID - Web Push)
+# Generar claves con: python manage.py generate_vapid_keys
+VAPID_PRIVATE_KEY = os.environ.get('VAPID_PRIVATE_KEY', '')
+VAPID_PUBLIC_KEY = os.environ.get('VAPID_PUBLIC_KEY', '')
+VAPID_CLAIMS = {
+    "sub": f"mailto:{os.environ.get('VAPID_ADMIN_EMAIL', 'admin@smartsales365.com')}"
+}
 
 # Logging configuration
 LOGGING = {

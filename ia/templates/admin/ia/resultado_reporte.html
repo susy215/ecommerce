@@ -2,17 +2,32 @@
 {% load static ia_filters %}
 
 {% block extrastyle %}
+{{ block.super }}
 <style>
     .interpretacion-grid {
         display: grid;
         grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-        gap: 10px;
-        margin: 10px 0;
+        gap: 15px;
+        margin: 15px 0;
     }
     .interpretacion-item {
-        background: var(--darkened-bg);
-        padding: 10px;
+        background: var(--body-bg);
+        border: 1px solid var(--hairline-color);
+        padding: 12px 15px;
         border-radius: 4px;
+        border-left: 3px solid var(--link-fg);
+    }
+    .interpretacion-item strong {
+        display: block;
+        font-size: 11px;
+        text-transform: uppercase;
+        color: var(--body-quiet-color);
+        margin-bottom: 5px;
+        letter-spacing: 0.5px;
+    }
+    .interpretacion-item .quiet {
+        font-size: 14px;
+        color: var(--body-fg);
     }
 </style>
 {% endblock %}
@@ -36,7 +51,9 @@
     <div class="module">
         <h2>Consulta Procesada</h2>
         <div style="padding: 15px;">
-            <p><strong>{{ prompt }}</strong></p>
+            <div class="form-row">
+                <p style="margin: 0; font-size: 14px; line-height: 1.6;"><strong>{{ prompt }}</strong></p>
+            </div>
         </div>
     </div>
     
@@ -84,15 +101,19 @@
     <div class="module">
         <h2>Datos del Reporte</h2>
         <div style="padding: 15px;">
-            <p class="help">Total de registros: <strong>{{ resultado.datos|length }}</strong></p>
+            <p class="help" style="margin-bottom: 15px;">
+                Total de registros: <strong>{{ resultado.datos|length }}</strong>
+            </p>
         </div>
         
-        <div style="overflow-x: auto;">
-            <table id="result_list">
+        <div style="overflow-x: auto; padding: 0 15px 15px 15px;">
+            <table id="result_list" class="results">
                 <thead>
                     <tr>
                         {% for columna in resultado.columnas %}
-                        <th scope="col">{{ columna|replace_underscores|title }}</th>
+                        <th scope="col">
+                            <div class="text"><span>{{ columna|replace_underscores|title }}</span></div>
+                        </th>
                         {% endfor %}
                     </tr>
                 </thead>
@@ -119,13 +140,17 @@
     {% else %}
     <div class="module">
         <div style="padding: 40px; text-align: center;">
-            <h3>No se encontraron datos</h3>
-            <p class="help">La consulta se ejecutó correctamente pero no devolvió resultados.</p>
+            <p class="help" style="font-size: 14px; margin-bottom: 10px;">
+                <strong>No se encontraron datos</strong>
+            </p>
+            <p class="help" style="font-size: 13px;">
+                La consulta se ejecutó correctamente pero no devolvió resultados.
+            </p>
         </div>
     </div>
     {% endif %}
     
-    <div class="submit-row">
+    <div class="submit-row" style="border-top: 1px solid var(--hairline-color); padding-top: 15px; margin-top: 20px;">
         <a href="{% url 'admin:ia_reportegenerado_changelist' %}" class="button">Nueva Consulta</a>
         <a href="{% url 'admin:ia_consultaia_change' consulta_id %}" class="button">Ver Detalles de la Consulta</a>
     </div>
