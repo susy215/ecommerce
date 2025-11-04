@@ -1,0 +1,134 @@
+{% extends "admin/base_site.html" %}
+{% load static ia_filters %}
+
+{% block extrastyle %}
+<style>
+    .interpretacion-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+        gap: 10px;
+        margin: 10px 0;
+    }
+    .interpretacion-item {
+        background: var(--darkened-bg);
+        padding: 10px;
+        border-radius: 4px;
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Inicio</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='ia' %}">IA</a>
+    &rsaquo; <a href="{% url 'admin:ia_reportegenerado_changelist' %}">Generar Reporte con IA</a>
+    &rsaquo; Resultado
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    
+    <div class="messagelist">
+        <div class="success">Reporte generado exitosamente en {{ tiempo }} segundos</div>
+    </div>
+    
+    <div class="module">
+        <h2>Consulta Procesada</h2>
+        <div style="padding: 15px;">
+            <p><strong>{{ prompt }}</strong></p>
+        </div>
+    </div>
+    
+    <div class="module">
+        <h2>Interpretación de la Consulta</h2>
+        <div style="padding: 15px;">
+            <div class="interpretacion-grid">
+                <div class="interpretacion-item">
+                    <strong>Tipo de Reporte:</strong><br>
+                    <span class="quiet">{{ interpretacion.tipo_reporte|title }}</span>
+                </div>
+                {% if interpretacion.fecha_inicio %}
+                <div class="interpretacion-item">
+                    <strong>Fecha Inicio:</strong><br>
+                    <span class="quiet">{{ interpretacion.fecha_inicio|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+                {% if interpretacion.fecha_fin %}
+                <div class="interpretacion-item">
+                    <strong>Fecha Fin:</strong><br>
+                    <span class="quiet">{{ interpretacion.fecha_fin|date:"d/m/Y" }}</span>
+                </div>
+                {% endif %}
+                {% if interpretacion.agrupar_por %}
+                <div class="interpretacion-item">
+                    <strong>Agrupado por:</strong><br>
+                    <span class="quiet">{{ interpretacion.agrupar_por|join:", " }}</span>
+                </div>
+                {% endif %}
+                {% if interpretacion.metricas %}
+                <div class="interpretacion-item">
+                    <strong>Métricas:</strong><br>
+                    <span class="quiet">{{ interpretacion.metricas|join:", " }}</span>
+                </div>
+                {% endif %}
+                <div class="interpretacion-item">
+                    <strong>Formato:</strong><br>
+                    <span class="quiet">{{ interpretacion.formato|upper }}</span>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    {% if resultado.datos %}
+    <div class="module">
+        <h2>Datos del Reporte</h2>
+        <div style="padding: 15px;">
+            <p class="help">Total de registros: <strong>{{ resultado.datos|length }}</strong></p>
+        </div>
+        
+        <div style="overflow-x: auto;">
+            <table id="result_list">
+                <thead>
+                    <tr>
+                        {% for columna in resultado.columnas %}
+                        <th scope="col">{{ columna|replace_underscores|title }}</th>
+                        {% endfor %}
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for fila in resultado.datos %}
+                    <tr class="{% cycle 'row1' 'row2' %}">
+                        {% for columna in resultado.columnas %}
+                        <td>
+                            {% with valor=fila|lookup:columna %}
+                                {% if valor != None and valor != '' %}
+                                    {{ valor }}
+                                {% else %}
+                                    <span class="quiet">-</span>
+                                {% endif %}
+                            {% endwith %}
+                        </td>
+                        {% endfor %}
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    {% else %}
+    <div class="module">
+        <div style="padding: 40px; text-align: center;">
+            <h3>No se encontraron datos</h3>
+            <p class="help">La consulta se ejecutó correctamente pero no devolvió resultados.</p>
+        </div>
+    </div>
+    {% endif %}
+    
+    <div class="submit-row">
+        <a href="{% url 'admin:ia_reportegenerado_changelist' %}" class="button">Nueva Consulta</a>
+        <a href="{% url 'admin:ia_consultaia_change' consulta_id %}" class="button">Ver Detalles de la Consulta</a>
+    </div>
+    
+</div>
+{% endblock %}

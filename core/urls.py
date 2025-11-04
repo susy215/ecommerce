@@ -32,6 +32,7 @@ urlpatterns = [
     # path('api/ventas/', include('ventas.urls')),  # deshabilitado para evitar confusiones
     path('api/reportes/', include('reportes.urls')),
     path('api/ia/', include('ia.urls')),
+    path('api/promociones/', include('promociones.urls')),
     path('api/auth/', include('rest_framework.urls')),
     # API schema & docs
     path('api/schema/', SpectacularAPIView.as_view(), name='schema'),

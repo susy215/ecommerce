@@ -19,6 +19,20 @@ class Compra(models.Model):
     # Integración de pago (Stripe u otros)
     stripe_session_id = models.CharField(max_length=200, blank=True)
     stripe_payment_intent = models.CharField(max_length=200, blank=True, db_index=True)
+    # Promoción aplicada
+    promocion = models.ForeignKey(
+        'promociones.Promocion',
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name='compras'
+    )
+    descuento_aplicado = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        validators=[MinValueValidator(Decimal('0'))]
+    )
 
     class Meta:
         db_table = 'compras'
@@ -34,12 +48,28 @@ class Compra(models.Model):
         return f"Compra #{self.id} - {self.cliente} - {self.fecha:%Y-%m-%d}"
 
     def recalc_total(self, save=True):
-        """Recalcula el total de la compra"""
-        total = self.items.aggregate(s=Sum('subtotal'))['s'] or 0
-        self.total = total
+        """Recalcula el total de la compra con descuento aplicado"""
+        subtotal = self.items.aggregate(s=Sum('subtotal'))['s'] or 0
+        total = subtotal - self.descuento_aplicado
+        self.total = max(total, 0)  # No puede ser negativo
         if save:
             self.save(update_fields=['total'])
-        return total
+        return self.total
+    
+    def aplicar_promocion(self, promocion):
+        """Aplica una promoción a la compra"""
+        subtotal = self.items.aggregate(s=Sum('subtotal'))['s'] or 0
+        descuento, total_final = promocion.calcular_descuento(subtotal)
+        
+        self.promocion = promocion
+        self.descuento_aplicado = descuento
+        self.total = total_final
+        self.save()
+        
+        # Incrementar uso de la promoción
+        promocion.incrementar_uso()
+        
+        return descuento
     
     @property
     def esta_pagada(self):

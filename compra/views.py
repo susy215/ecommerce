@@ -62,11 +62,13 @@ class CompraViewSet(viewsets.ModelViewSet):
         Crea una compra con items dados (el carrito vive en el frontend).
         Body esperado: {
             "items": [{"producto": ID, "cantidad": N}, ...],
-            "observaciones": "..."
+            "observaciones": "...",
+            "codigo_promocion": "VERANO2025" (opcional)
         }
         
         ✅ Valida stock disponible
         ✅ Reduce stock automáticamente
+        ✅ Aplica promoción si existe
         ✅ Usa transacciones para atomicidad
         """
         items = request.data.get('items') or []
@@ -76,6 +78,7 @@ class CompraViewSet(viewsets.ModelViewSet):
                 status=status.HTTP_400_BAD_REQUEST
             )
         observaciones = request.data.get('observaciones', '')
+        codigo_promocion = request.data.get('codigo_promocion', '').strip()
 
         user = request.user
         cliente = getattr(user, 'perfil_cliente', None)
@@ -88,9 +91,26 @@ class CompraViewSet(viewsets.ModelViewSet):
             )
 
         from productos.models import Producto
+        from promociones.models import Promocion
 
         try:
             with transaction.atomic():
+                # Validar promoción si existe
+                promocion = None
+                if codigo_promocion:
+                    try:
+                        promocion = Promocion.objects.get(codigo=codigo_promocion.upper())
+                        if not promocion.esta_vigente():
+                            return Response(
+                                {'detail': 'La promoción no está vigente o ha alcanzado el límite de usos'},
+                                status=status.HTTP_400_BAD_REQUEST
+                            )
+                    except Promocion.DoesNotExist:
+                        return Response(
+                            {'detail': f'Código de promoción "{codigo_promocion}" inválido'},
+                            status=status.HTTP_400_BAD_REQUEST
+                        )
+                
                 # Validar todos los productos y stock ANTES de crear la compra
                 productos_validados = []
                 for it in items:
@@ -163,6 +183,11 @@ class CompraViewSet(viewsets.ModelViewSet):
 
                 # Recalcular total
                 compra.recalc_total()
+                
+                # ✅ Aplicar promoción si existe
+                if promocion:
+                    descuento = compra.aplicar_promocion(promocion)
+                    logger.info(f'Promoción {promocion.codigo} aplicada a compra #{compra.id}. Descuento: ${descuento}')
 
             logger.info(f'Compra #{compra.id} creada exitosamente por usuario {user.username}')
             return Response(

@@ -26,6 +26,7 @@ class CompraSerializer(serializers.ModelSerializer):
     items = CompraItemSerializer(many=True, read_only=True)
     cliente_nombre = serializers.CharField(source='cliente.nombre', read_only=True)
     esta_pagada = serializers.BooleanField(read_only=True)
+    promocion_codigo = serializers.CharField(source='promocion.codigo', read_only=True)
 
     class Meta:
         model = Compra
@@ -41,6 +42,9 @@ class CompraSerializer(serializers.ModelSerializer):
             'esta_pagada',
             'stripe_session_id',
             'stripe_payment_intent',
+            'promocion',
+            'promocion_codigo',
+            'descuento_aplicado',
             'items'
         )
         read_only_fields = (
@@ -50,6 +54,7 @@ class CompraSerializer(serializers.ModelSerializer):
             'pagado_en',
             'stripe_session_id',
             'stripe_payment_intent',
+            'descuento_aplicado',
         )
 
 
@@ -65,4 +70,10 @@ class CompraCreateSerializer(serializers.Serializer):
         required=False,
         allow_blank=True,
         default=''
+    )
+    codigo_promocion = serializers.CharField(
+        max_length=50,
+        required=False,
+        allow_blank=True,
+        help_text="Código de promoción opcional"
     )

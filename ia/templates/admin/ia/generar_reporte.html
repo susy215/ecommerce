@@ -1,0 +1,123 @@
+{% extends "admin/base_site.html" %}
+{% load static %}
+
+{% block extrastyle %}
+<style>
+    .ejemplo-item {
+        cursor: pointer;
+        padding: 8px 10px;
+        margin: 4px 0;
+        border-left: 3px solid var(--primary);
+    }
+    .ejemplo-item:hover {
+        background: var(--darkened-bg);
+    }
+    .historial-item {
+        cursor: pointer;
+        padding: 10px;
+        border-bottom: 1px solid var(--hairline-color);
+    }
+    .historial-item:hover {
+        background: var(--darkened-bg);
+    }
+</style>
+{% endblock %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+    <a href="{% url 'admin:index' %}">Inicio</a>
+    &rsaquo; <a href="{% url 'admin:app_list' app_label='ia' %}">IA</a>
+    &rsaquo; Generar Reporte con IA
+</div>
+{% endblock %}
+
+{% block content %}
+<div id="content-main">
+    
+    {% if error %}
+    <div class="messagelist">
+        <div class="error">{{ error }}</div>
+    </div>
+    {% endif %}
+    
+    <div class="module">
+        <h2>Generar Reporte con IA</h2>
+        
+        <div style="padding: 15px;">
+            <p class="help">
+                <strong>💡 Consejos para mejores resultados:</strong><br>
+                • Especifica el <strong>tipo de reporte</strong>: ventas, productos, clientes, inventario<br>
+                • Incluye <strong>fechas</strong>: "septiembre", "última semana", "01/10/2024"<br>
+                • Indica el <strong>formato</strong>: PDF, Excel, CSV, o "en pantalla"<br>
+                • Usa <strong>límites</strong>: "top 10", "primeros 20"<br>
+                • Agrupa datos: "agrupado por producto", "por cliente"
+            </p>
+            
+            <form method="post">
+                {% csrf_token %}
+                <div class="form-row">
+                    <div>
+                        <label for="prompt" class="required">Tu consulta:</label>
+                        <textarea 
+                            name="prompt" 
+                            id="prompt" 
+                            rows="4" 
+                            style="width: 100%;" 
+                            class="vLargeTextField"
+                            placeholder="Ej: Quiero un reporte de ventas del mes de septiembre, agrupado por producto, en PDF"
+                            required
+                        >{{ prompt }}</textarea>
+                        <p class="help">Escribe tu pregunta como si le hablaras a una persona.</p>
+                    </div>
+                </div>
+                <div class="submit-row">
+                    <input type="submit" value="Generar Reporte" class="default">
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <div class="module">
+        <h2>Ejemplos de consultas</h2>
+        <p style="padding: 10px 15px;" class="help">Haz clic en cualquier ejemplo para usarlo:</p>
+        <div style="padding: 0 15px 15px 15px;">
+            {% for ejemplo in ejemplos %}
+            <div class="ejemplo-item" onclick="document.getElementById('prompt').value = '{{ ejemplo }}'; document.getElementById('prompt').focus();">
+                {{ ejemplo }}
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+    
+    {% if historial %}
+    <div class="module">
+        <h2>Historial Reciente</h2>
+        <table style="width: 100%;">
+            <tbody>
+            {% for consulta in historial %}
+            <tr class="historial-item" onclick="document.getElementById('prompt').value = '{{ consulta.prompt|escapejs }}'; document.getElementById('prompt').focus();">
+                <td style="width: 70%;">
+                    <strong>{{ consulta.prompt|truncatewords:20 }}</strong>
+                    <div class="quiet" style="font-size: 11px; margin-top: 3px;">
+                        {{ consulta.fecha_consulta|date:"d/m/Y H:i" }}
+                        {% if consulta.tiempo_ejecucion %}
+                        - {{ consulta.tiempo_ejecucion|floatformat:2 }}s
+                        {% endif %}
+                    </div>
+                </td>
+                <td style="text-align: right;">
+                    {% if consulta.error %}
+                    <span style="color: var(--error-fg);">✗ Error</span>
+                    {% else %}
+                    <span style="color: var(--success-fg);">✓ Exitoso</span>
+                    {% endif %}
+                </td>
+            </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% endif %}
+    
+</div>
+{% endblock %}

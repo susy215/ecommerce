@@ -46,6 +46,7 @@ ALLOWED_HOSTS = _csv_env('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
 # Application definition
 
 INSTALLED_APPS = [
+    'corsheaders',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -55,7 +56,7 @@ INSTALLED_APPS = [
     'rest_framework',
     'rest_framework.authtoken',
     'drf_spectacular',
-    'corsheaders',
+
     'productos',
     # 'ventas',  # eliminado de rutas y apps para simplificar flujo
     'compra',
@@ -63,11 +64,12 @@ INSTALLED_APPS = [
     'ia',
     'clientes',
     'reportes',
+    'promociones',
 ]
 
 MIDDLEWARE = [
-    'django.middleware.security.SecurityMiddleware',
     'corsheaders.middleware.CorsMiddleware',
+    'django.middleware.security.SecurityMiddleware',
     'django.contrib.sessions.middleware.SessionMiddleware',
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
@@ -196,7 +198,26 @@ else:
     CORS_ALLOW_ALL_ORIGINS = True if DEBUG else False
 
 CSRF_TRUSTED_ORIGINS = _csv_env('CSRF_TRUSTED_ORIGINS', '')
-
+CORS_ALLOW_CREDENTIALS = True
+CORS_ALLOW_METHODS = [
+    'DELETE',
+    'GET',
+    'OPTIONS',
+    'PATCH',
+    'POST',
+    'PUT',
+]
+CORS_ALLOW_HEADERS = [
+    'accept',
+    'accept-encoding',
+    'authorization',
+    'content-type',
+    'dnt',
+    'origin',
+    'user-agent',
+    'x-csrftoken',
+    'x-requested-with',
+]
 # Stripe / pagos
 # Usa STRIPE_SECRET_KEY (recomendado). Mantiene compatibilidad con STRIPE_API_KEY
 STRIPE_SECRET_KEY = os.environ.get('STRIPE_SECRET_KEY', os.environ.get('STRIPE_API_KEY', ''))

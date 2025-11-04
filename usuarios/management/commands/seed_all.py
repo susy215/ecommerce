@@ -52,9 +52,14 @@ class Command(BaseCommand):
                 clientes = self.crear_clientes(usuarios)
                 self.stdout.write(self.style.SUCCESS(f'  ✓ {len(clientes)} clientes creados'))
 
-                # 5. Crear compras
+                # 5. Crear promociones
+                self.stdout.write('\n🎁 Creando promociones...')
+                promociones = self.crear_promociones()
+                self.stdout.write(self.style.SUCCESS(f'  ✓ {len(promociones)} promociones creadas'))
+
+                # 6. Crear compras
                 self.stdout.write('\n🛒 Creando compras...')
-                compras = self.crear_compras(clientes, productos)
+                compras = self.crear_compras(clientes, productos, promociones)
                 self.stdout.write(self.style.SUCCESS(f'  ✓ {len(compras)} compras creadas'))
 
                 self.stdout.write('\n' + '='*50)
@@ -262,7 +267,72 @@ class Command(BaseCommand):
 
         return clientes
 
-    def crear_compras(self, clientes, productos):
+    def crear_promociones(self):
+        """Crea promociones de prueba"""
+        from promociones.models import Promocion
+        
+        promociones = []
+        ahora = timezone.now()
+        
+        promociones_data = [
+            {
+                'codigo': 'VERANO2025',
+                'nombre': 'Descuento de Verano',
+                'descripcion': '20% de descuento en toda la tienda',
+                'tipo_descuento': 'porcentaje',
+                'valor_descuento': Decimal('20.00'),
+                'descuento_maximo': Decimal('100.00'),
+                'monto_minimo': Decimal('50.00'),
+                'fecha_inicio': ahora - timedelta(days=10),
+                'fecha_fin': ahora + timedelta(days=50),
+                'usos_maximos': 100,
+            },
+            {
+                'codigo': 'BIENVENIDA',
+                'nombre': 'Bienvenida',
+                'descripcion': '$15 de descuento en tu primera compra',
+                'tipo_descuento': 'monto',
+                'valor_descuento': Decimal('15.00'),
+                'monto_minimo': Decimal('30.00'),
+                'fecha_inicio': ahora - timedelta(days=30),
+                'fecha_fin': None,
+                'usos_maximos': None,
+            },
+            {
+                'codigo': 'BLACK50',
+                'nombre': 'Black Friday',
+                'descripcion': '50% de descuento',
+                'tipo_descuento': 'porcentaje',
+                'valor_descuento': Decimal('50.00'),
+                'descuento_maximo': Decimal('200.00'),
+                'monto_minimo': Decimal('100.00'),
+                'fecha_inicio': ahora - timedelta(days=5),
+                'fecha_fin': ahora + timedelta(days=2),
+                'usos_maximos': 50,
+            },
+            {
+                'codigo': 'ENVIOGRATIS',
+                'nombre': 'Envío Gratis',
+                'descripcion': '$10 de descuento en envío',
+                'tipo_descuento': 'monto',
+                'valor_descuento': Decimal('10.00'),
+                'monto_minimo': Decimal('25.00'),
+                'fecha_inicio': ahora - timedelta(days=15),
+                'fecha_fin': ahora + timedelta(days=30),
+                'usos_maximos': 200,
+            },
+        ]
+        
+        for data in promociones_data:
+            promo, _ = Promocion.objects.get_or_create(
+                codigo=data['codigo'],
+                defaults=data
+            )
+            promociones.append(promo)
+        
+        return promociones
+
+    def crear_compras(self, clientes, productos, promociones):
         """Crea compras de prueba con diferentes estados"""
         from compra.models import Compra, CompraItem
 
@@ -303,6 +373,12 @@ class Command(BaseCommand):
 
             # Recalcular total
             compra.recalc_total()
+            
+            # 30% de las compras tienen promoción
+            if random.random() < 0.3 and promociones:
+                promo = random.choice(promociones)
+                if promo.esta_vigente():
+                    compra.aplicar_promocion(promo)
 
             # 70% de las compras están pagadas
             if random.random() < 0.7:
