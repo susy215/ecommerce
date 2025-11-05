@@ -2,11 +2,13 @@ from rest_framework import viewsets, permissions, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django.db import transaction
+from django.db.models import Sum
 from django.conf import settings
 from rest_framework.views import APIView
 from django.views.decorators.csrf import csrf_exempt
 from django.utils.decorators import method_decorator
 from django.utils import timezone
+from decimal import Decimal
 from .models import Compra, CompraItem
 from .serializers import CompraSerializer
 from django.http import HttpResponse
@@ -184,13 +186,29 @@ class CompraViewSet(viewsets.ModelViewSet):
                     # ✅ Reducir stock
                     producto.reducir_stock(cantidad)
 
-                # Recalcular total
+                # Recalcular total (obtener subtotal)
                 compra.recalc_total()
+                subtotal = compra.items.aggregate(s=Sum('subtotal'))['s'] or Decimal('0')
                 
-                # ✅ Aplicar promoción si existe
+                # ✅ Aplicar promoción si existe y cumple requisitos
                 if promocion:
-                    descuento = compra.aplicar_promocion(promocion)
-                    logger.info(f'Promoción {promocion.codigo} aplicada a compra #{compra.id}. Descuento: ${descuento}')
+                    # Validar que el subtotal cumple con el monto mínimo
+                    if subtotal < promocion.monto_minimo:
+                        logger.warning(
+                            f'Promoción {promocion.codigo} no aplicable: '
+                            f'subtotal ${subtotal} < monto mínimo ${promocion.monto_minimo}'
+                        )
+                    else:
+                        try:
+                            descuento = compra.aplicar_promocion(promocion)
+                            logger.info(
+                                f'Promoción {promocion.codigo} aplicada a compra #{compra.id}. '
+                                f'Subtotal: ${subtotal}, Descuento: ${descuento}, Total: ${compra.total}'
+                            )
+                        except Exception as e:
+                            logger.error(f'Error aplicando promoción {promocion.codigo}: {str(e)}')
+                            # Continuar sin promoción si hay error
+                            compra.recalc_total()
 
             logger.info(f'Compra #{compra.id} creada exitosamente por usuario {user.username}')
             

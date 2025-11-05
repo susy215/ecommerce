@@ -1,6 +1,7 @@
 from django.db import models
 from django.core.validators import MinValueValidator
 from decimal import Decimal
+from PIL import Image
 
 
 class Categoria(models.Model):
@@ -38,6 +39,12 @@ class Producto(models.Model):
 		on_delete=models.SET_NULL,
 		related_name='productos'
 	)
+	imagen = models.ImageField(
+		upload_to='productos/',
+		blank=True,
+		null=True,
+		help_text='Imagen del producto (se optimizará automáticamente)'
+	)
 	fecha_creacion = models.DateTimeField(auto_now_add=True)
 	fecha_actualizacion = models.DateTimeField(auto_now=True)
 
@@ -64,3 +71,32 @@ class Producto(models.Model):
 			raise ValueError(f'Stock insuficiente para {self.nombre}. Disponible: {self.stock}')
 		self.stock -= cantidad
 		self.save(update_fields=['stock'])
+	
+	def save(self, *args, **kwargs):
+		"""Optimiza la imagen al guardar"""
+		super().save(*args, **kwargs)
+		
+		if self.imagen:
+			try:
+				img = Image.open(self.imagen.path)
+				
+				# Convertir a RGB si es necesario (para PNG con transparencia)
+				if img.mode in ('RGBA', 'LA', 'P'):
+					background = Image.new('RGB', img.size, (255, 255, 255))
+					if img.mode == 'P':
+						img = img.convert('RGBA')
+					background.paste(img, mask=img.split()[-1] if img.mode == 'RGBA' else None)
+					img = background
+				
+				# Redimensionar si es muy grande (máximo 800x800)
+				if img.width > 800 or img.height > 800:
+					img.thumbnail((800, 800), Image.Resampling.LANCZOS)
+				
+				# Guardar optimizado (calidad 85, buen balance tamaño/calidad)
+				img.save(self.imagen.path, 'JPEG', quality=85, optimize=True)
+				
+			except Exception as e:
+				# Si hay error optimizando, continuar sin optimizar
+				import logging
+				logger = logging.getLogger(__name__)
+				logger.warning(f'Error optimizando imagen para producto {self.id}: {str(e)}')
