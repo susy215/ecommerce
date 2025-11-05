@@ -355,6 +355,27 @@ class CompraViewSet(viewsets.ModelViewSet):
             )
 
 
+class StripePublicKeyView(APIView):
+    """
+    Retorna la clave pública de Stripe (STRIPE_PUBLISHABLE_KEY).
+    Endpoint público sin autenticación, ya que el frontend necesita esta clave.
+    """
+    authentication_classes = []
+    permission_classes = []
+    
+    def get(self, request):
+        """Retorna la clave pública de Stripe"""
+        public_key = getattr(settings, 'STRIPE_PUBLISHABLE_KEY', '')
+        
+        if not public_key:
+            return Response(
+                {'detail': 'STRIPE_PUBLISHABLE_KEY no configurada en el servidor'},
+                status=status.HTTP_500_INTERNAL_SERVER_ERROR
+            )
+        
+        return Response({'publicKey': public_key})
+
+
 @method_decorator(csrf_exempt, name='dispatch')
 class StripeWebhookView(APIView):
     """
