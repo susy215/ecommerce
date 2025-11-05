@@ -27,13 +27,23 @@ class GeneradorReportes:
     def _generar_titulo(self):
         """Genera un título descriptivo para el reporte"""
         tipo = self.params['tipo_reporte']
-        titulo = f"Reporte de {tipo.title()}"
+        # Título más amigable por tipo
+        if tipo == 'inventario':
+            titulo = "Inventario actual"
+        elif tipo == 'ventas':
+            titulo = "Reporte de Ventas"
+        elif tipo == 'clientes':
+            titulo = "Reporte de Clientes"
+        elif tipo == 'productos':
+            titulo = "Reporte de Productos"
+        else:
+            titulo = f"Reporte de {tipo.title()}"
         
-        if self.params['fecha_inicio'] and self.params['fecha_fin']:
+        if self.params['fecha_inicio'] and self.params['fecha_fin'] and tipo != 'inventario':
             inicio = self.params['fecha_inicio'].strftime('%d/%m/%Y')
             fin = self.params['fecha_fin'].strftime('%d/%m/%Y')
             titulo += f" del {inicio} al {fin}"
-        elif self.params['fecha_inicio']:
+        elif self.params['fecha_inicio'] and tipo != 'inventario':
             inicio = self.params['fecha_inicio'].strftime('%d/%m/%Y')
             titulo += f" desde {inicio}"
         
@@ -157,6 +167,15 @@ class GeneradorReportes:
                 fontName='Helvetica-Bold'
             )
             elements.append(Paragraph(f"Total de registros: {len(self.datos['datos'])}", resumen_style))
+            # Resumen detallado para inventario
+            if self.params.get('tipo_reporte') == 'inventario':
+                try:
+                    total_stock = sum(int(f.get('stock', 0)) for f in self.datos['datos'])
+                    total_valor = sum(float(f.get('valor_inventario', 0)) for f in self.datos['datos'])
+                    elements.append(Paragraph(f"Stock total: {total_stock}", styles['Normal']))
+                    elements.append(Paragraph(f"Valor total de inventario: ${total_valor:,.2f}", styles['Normal']))
+                except Exception:
+                    pass
         
         # Construir PDF
         doc.build(elements)

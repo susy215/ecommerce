@@ -69,7 +69,7 @@ class InterpretadorPrompt:
         'ventas': ['venta', 'ventas', 'compra', 'compras', 'pedido', 'pedidos'],
         'clientes': ['cliente', 'clientes'],
         'productos': ['producto', 'productos'],
-        'inventario': ['inventario', 'stock', 'existencia'],
+        'inventario': ['inventario', 'stock', 'existencia', 'existencias'],
     }
     
     def __init__(self, prompt):
@@ -173,6 +173,10 @@ class InterpretadorPrompt:
     
     def _detectar_tipo_reporte(self):
         """Detecta el tipo de reporte solicitado"""
+        # Detección directa para casos comunes
+        if any(x in self.prompt for x in ['inventario', 'stock', 'existencia', 'existencias']):
+            self.resultado['tipo_reporte'] = 'inventario'
+            return
         for tipo, palabras in self.TIPOS_REPORTE.items():
             for palabra in palabras:
                 if palabra in self.prompt:
