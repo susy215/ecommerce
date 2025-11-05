@@ -432,6 +432,9 @@ class Command(BaseCommand):
         compras_pagadas = 0
         total_ventas = Decimal('0')
         
+        # Mapeo de compras y sus fechas para actualizar al final
+        compras_fechas_map = {}  # {compra_id: fecha_compra}
+        
         # Generar distribución temporal más realista
         # Más ventas en meses recientes, menos en meses antiguos
         pesos_mensuales = []
@@ -526,8 +529,8 @@ class Command(BaseCommand):
                     observaciones=random.choice(observaciones_posibles),
                 )
                 
-                # Actualizar fecha (bypass auto_now_add)
-                Compra.objects.filter(id=compra.id).update(fecha=fecha_compra)
+                # Guardar fecha para actualizar al final
+                compras_fechas_map[compra.id] = fecha_compra
                 
                 # Agregar items
                 subtotal = Decimal('0')
@@ -616,6 +619,13 @@ class Command(BaseCommand):
                     compras_por_mes[mes_nombre] = {'count': 0, 'total': Decimal('0')}
                 compras_por_mes[mes_nombre]['count'] += 1
                 compras_por_mes[mes_nombre]['total'] += compra.total
+        
+        # Actualizar todas las fechas al final (bypass auto_now_add)
+        self.stdout.write('\n  🔄 Actualizando fechas históricas...')
+        for compra_id, fecha_historica in compras_fechas_map.items():
+            Compra.objects.filter(id=compra_id).update(fecha=fecha_historica)
+        
+        self.stdout.write(self.style.SUCCESS(f'  ✓ {len(compras_fechas_map)} fechas actualizadas'))
         
         # Mostrar estadísticas
         self.stdout.write(self.style.SUCCESS(f'\n  ✓ Creadas {compras_creadas} compras históricas'))
