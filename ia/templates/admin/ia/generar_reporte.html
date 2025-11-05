@@ -148,29 +148,61 @@
 (function() {
     'use strict';
     
-    // Ejemplos de consultas
-    document.querySelectorAll('.ejemplo-item').forEach(function(item) {
-        item.addEventListener('click', function() {
-            var ejemplo = this.getAttribute('data-ejemplo');
-            var promptField = document.getElementById('prompt');
-            if (promptField) {
-                promptField.value = ejemplo;
-                promptField.focus();
-            }
-        });
-    });
+    // Esperar a que el DOM esté completamente cargado
+    if (document.readyState === 'loading') {
+        document.addEventListener('DOMContentLoaded', inicializarEventos);
+    } else {
+        inicializarEventos();
+    }
     
-    // Historial
-    document.querySelectorAll('.historial-row').forEach(function(row) {
-        row.addEventListener('click', function() {
-            var prompt = this.getAttribute('data-prompt');
-            var promptField = document.getElementById('prompt');
-            if (promptField) {
-                promptField.value = prompt;
-                promptField.focus();
-            }
+    function inicializarEventos() {
+        console.log('Inicializando eventos de reportes IA');
+        
+        // Ejemplos de consultas
+        var ejemplos = document.querySelectorAll('.ejemplo-item');
+        console.log('Ejemplos encontrados:', ejemplos.length);
+        
+        ejemplos.forEach(function(item) {
+            item.addEventListener('click', function(e) {
+                e.preventDefault();
+                var ejemplo = this.getAttribute('data-ejemplo');
+                var promptField = document.getElementById('prompt');
+                
+                console.log('Ejemplo clickeado:', ejemplo);
+                console.log('Campo prompt encontrado:', !!promptField);
+                
+                if (promptField && ejemplo) {
+                    promptField.value = ejemplo;
+                    promptField.focus();
+                    // Scroll suave al formulario
+                    promptField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                } else {
+                    console.error('No se pudo cargar el ejemplo');
+                }
+            });
         });
-    });
+        
+        // Historial
+        var historialRows = document.querySelectorAll('.historial-row');
+        console.log('Filas de historial encontradas:', historialRows.length);
+        
+        historialRows.forEach(function(row) {
+            row.addEventListener('click', function(e) {
+                e.preventDefault();
+                var prompt = this.getAttribute('data-prompt');
+                var promptField = document.getElementById('prompt');
+                
+                console.log('Historial clickeado:', prompt);
+                
+                if (promptField && prompt) {
+                    promptField.value = prompt;
+                    promptField.focus();
+                    // Scroll suave al formulario
+                    promptField.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }
+            });
+        });
+    }
 })();
 </script>
 {% endblock %}
