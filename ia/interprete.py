@@ -189,6 +189,17 @@ class InterpretadorPrompt:
                 if f'por {palabra}' in self.prompt or f'agrupado por {palabra}' in self.prompt:
                     if grupo not in self.resultado['agrupar_por']:
                         self.resultado['agrupar_por'].append(grupo)
+        # Soporte para expresiones tipo "top clientes/productos/categorías" sin 'por'
+        if 'top' in self.prompt or 'mejores' in self.prompt or 'ranking' in self.prompt:
+            if any(p in self.prompt for p in self.AGRUPACIONES['cliente']):
+                if 'cliente' not in self.resultado['agrupar_por']:
+                    self.resultado['agrupar_por'].append('cliente')
+            if any(p in self.prompt for p in self.AGRUPACIONES['producto']):
+                if 'producto' not in self.resultado['agrupar_por']:
+                    self.resultado['agrupar_por'].append('producto')
+            if any(p in self.prompt for p in self.AGRUPACIONES['categoria']):
+                if 'categoria' not in self.resultado['agrupar_por']:
+                    self.resultado['agrupar_por'].append('categoria')
     
     def _detectar_metricas(self):
         """Detecta qué métricas calcular"""
@@ -227,6 +238,10 @@ class InterpretadorPrompt:
             self.resultado['orden'] = '-total'
         elif 'menor' in self.prompt or 'ascendente' in self.prompt or 'asc' in self.prompt:
             self.resultado['orden'] = 'total'
+        # Si se pide "top" y no se definió orden, usar descendente por total
+        if (('top' in self.prompt or 'mejores' in self.prompt or 'ranking' in self.prompt)
+            and not self.resultado.get('orden')):
+            self.resultado['orden'] = '-total'
     
     def _detectar_limite(self):
         """Detecta límite de resultados"""
@@ -236,6 +251,13 @@ class InterpretadorPrompt:
         if match:
             limite = int(match.group(1))
             # Máximo 1000 registros para evitar problemas de rendimiento
+            self.resultado['limite'] = min(limite, 1000)
+            return
+        # "mejores N"
+        patron_mejores = r'mejores\s+(\d+)'
+        match = re.search(patron_mejores, self.prompt)
+        if match:
+            limite = int(match.group(1))
             self.resultado['limite'] = min(limite, 1000)
             return
         
@@ -251,8 +273,11 @@ class InterpretadorPrompt:
         # Para evitar consultas muy pesadas
         if not self.resultado['limite']:
             if self.resultado.get('agrupar_por'):
-                # Con agrupación: 100 por defecto
-                self.resultado['limite'] = 100
+                # Con agrupación: si hay "top" sin número, usar 10 por defecto
+                if 'top' in self.prompt or 'mejores' in self.prompt or 'ranking' in self.prompt:
+                    self.resultado['limite'] = 10
+                else:
+                    self.resultado['limite'] = 100
             else:
                 # Sin agrupación: 1000 por defecto
                 self.resultado['limite'] = 1000
