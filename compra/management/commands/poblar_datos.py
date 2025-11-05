@@ -523,9 +523,11 @@ class Command(BaseCommand):
                 # Crear compra
                 compra = Compra.objects.create(
                     cliente=cliente,
-                    fecha=fecha_compra,
                     observaciones=random.choice(observaciones_posibles),
                 )
+                
+                # Actualizar fecha (bypass auto_now_add)
+                Compra.objects.filter(id=compra.id).update(fecha=fecha_compra)
                 
                 # Agregar items
                 subtotal = Decimal('0')
@@ -594,11 +596,16 @@ class Command(BaseCommand):
                     if fecha_pago > ahora:
                         fecha_pago = ahora - timedelta(hours=random.randint(1, 24))
                     
-                    compra.pagado_en = fecha_pago
-                    compra.pago_referencia = f'PAY-{random.randint(10000, 99999)}-{compra.id}'
-                    compra.save()
+                    # Actualizar pagado_en y referencia
+                    pago_ref = f'PAY-{random.randint(10000, 99999)}-{compra.id}'
+                    Compra.objects.filter(id=compra.id).update(
+                        pagado_en=fecha_pago,
+                        pago_referencia=pago_ref
+                    )
                     
                     compras_pagadas += 1
+                    # Recargar compra para obtener el total actualizado
+                    compra.refresh_from_db()
                     total_ventas += compra.total
                 
                 compras_creadas += 1
