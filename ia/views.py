@@ -145,6 +145,16 @@ class ConsultaIAView(APIView):
 			generador = GeneradorConsultas(interpretacion)
 			resultado = generador.generar_consulta()
 			
+			# Validar que hay resultados
+			if not resultado or not resultado.get('datos') or len(resultado.get('datos', [])) == 0:
+				return Response(
+					{
+						'detail': 'No se encontraron datos para tu consulta. Intenta con otras fechas o filtros.',
+						'interpretacion': interpretacion
+					},
+					status=status.HTTP_404_NOT_FOUND
+				)
+			
 			# 3. Convertir para JSON serialization
 			from .interprete import convert_decimal_to_float
 			interpretacion_serializable = convert_decimal_to_float(interpretacion)
@@ -473,6 +483,90 @@ class DashboardPrediccionesView(APIView):
 			})
 		
 		return predicciones
+
+
+class HistorialConsultasView(APIView):
+	"""
+	API para obtener el historial de consultas del usuario actual.
+	
+	Útil para Flutter para mostrar consultas recientes y permitir reutilizarlas.
+	"""
+	permission_classes = [permissions.IsAuthenticated]
+	
+	@extend_schema(
+		summary='Obtener historial de consultas',
+		description='Retorna el historial de consultas realizadas por el usuario actual.',
+		parameters=[
+			OpenApiParameter(
+				'limit',
+				OpenApiTypes.INT,
+				description='Número máximo de consultas a retornar (default: 20)',
+				default=20
+			),
+			OpenApiParameter(
+				'formato',
+				OpenApiTypes.STR,
+				description='Filtrar por formato (opcional)',
+				required=False
+			),
+		],
+		responses={
+			200: {
+				'description': 'Historial de consultas',
+				'examples': [{
+					'name': 'Historial',
+					'value': {
+						'count': 2,
+						'results': [
+							{
+								'id': 1,
+								'prompt': 'Quiero un reporte de ventas de octubre en PDF',
+								'formato_salida': 'pdf',
+								'fecha_consulta': '2024-11-04T20:00:00Z',
+								'tiempo_ejecucion': 0.45,
+								'error': None
+							}
+						]
+					}
+				}]
+			}
+		},
+		tags=['IA - Reportes Dinámicos']
+	)
+	def get(self, request):
+		"""
+		Retorna el historial de consultas del usuario actual.
+		
+		Query params:
+		- limit: Número máximo de consultas (default: 20)
+		- formato: Filtrar por formato (opcional)
+		"""
+		limit = int(request.query_params.get('limit', 20))
+		formato = request.query_params.get('formato', None)
+		
+		queryset = ConsultaIA.objects.filter(usuario=request.user).order_by('-fecha_consulta')
+		
+		if formato:
+			queryset = queryset.filter(formato_salida=formato)
+		
+		consultas = queryset[:limit]
+		
+		results = []
+		for consulta in consultas:
+			results.append({
+				'id': consulta.id,
+				'prompt': consulta.prompt,
+				'formato_salida': consulta.formato_salida,
+				'fecha_consulta': consulta.fecha_consulta.isoformat(),
+				'tiempo_ejecucion': consulta.tiempo_ejecucion,
+				'error': consulta.error if consulta.error else None,
+				'tiene_resultado': consulta.resultado is not None,
+			})
+		
+		return Response({
+			'count': len(results),
+			'results': results
+		})
 
 
 class EntrenarModeloView(APIView):
