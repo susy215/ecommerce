@@ -67,6 +67,8 @@ class NotificacionEnviada(models.Model):
         ('compra_exitosa', 'Compra Exitosa'),
         ('cambio_estado', 'Cambio de Estado'),
         ('promocion', 'Promoción'),
+        ('nueva_compra', 'Nueva Compra (Admin)'),
+        ('nuevo_pago', 'Nuevo Pago (Admin)'),
         ('otro', 'Otro'),
     ]
     

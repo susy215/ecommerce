@@ -163,11 +163,105 @@ class PushNotificationService:
                 )
                 
                 logger.error(f'Error inesperado al enviar notificación: {error_msg}', exc_info=True)
-        
+
         return {
             'exitosos': exitosos,
             'fallidos': fallidos,
             'total': subscriptions.count()
+        }
+
+    def get_administradores(self):
+        """
+        Obtiene todos los usuarios con rol 'admin' o 'vendedor' para notificaciones.
+        """
+        from usuarios.models import Usuario
+        return Usuario.objects.filter(rol__in=['admin', 'vendedor'])
+
+    def send_to_administradores(self, titulo: str, mensaje: str, tipo: str = 'admin', datos_extra: Optional[Dict[str, Any]] = None, url: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Envía una notificación push a todos los administradores/vendedores.
+
+        Args:
+            titulo: Título de la notificación
+            mensaje: Cuerpo del mensaje
+            tipo: Tipo de notificación (admin, nueva_compra, nuevo_pago, etc.)
+            datos_extra: Datos adicionales para el payload
+            url: URL para abrir al hacer clic en la notificación
+
+        Returns:
+            Dict con resumen del envío a todos los admins
+        """
+        administradores = self.get_administradores()
+        total_exitosos = 0
+        total_fallidos = 0
+        resultados = []
+
+        for admin in administradores:
+            resultado = self.send_notification(
+                usuario=admin,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo=tipo,
+                datos_extra=datos_extra,
+                url=url
+            )
+            resultados.append({
+                'admin': admin.username,
+                'exitosos': resultado.get('exitosos', 0),
+                'fallidos': resultado.get('fallidos', 0)
+            })
+            total_exitosos += resultado.get('exitosos', 0)
+            total_fallidos += resultado.get('fallidos', 0)
+
+        return {
+            'total_exitosos': total_exitosos,
+            'total_fallidos': total_fallidos,
+            'administradores_notificados': len([r for r in resultados if r['exitosos'] > 0]),
+            'detalles': resultados
+        }
+
+    def send_to_all_clientes(self, titulo: str, mensaje: str, tipo: str = 'promocion', datos_extra: Optional[Dict[str, Any]] = None, url: Optional[str] = None) -> Dict[str, Any]:
+        """
+        Envía una notificación push a todos los clientes activos.
+
+        Args:
+            titulo: Título de la notificación
+            mensaje: Cuerpo del mensaje
+            tipo: Tipo de notificación
+            datos_extra: Datos adicionales para el payload
+            url: URL para abrir al hacer clic en la notificación
+
+        Returns:
+            Dict con resumen del envío a todos los clientes
+        """
+        from usuarios.models import Usuario
+        clientes = Usuario.objects.filter(rol='cliente', is_active=True)
+        total_exitosos = 0
+        total_fallidos = 0
+        resultados = []
+
+        for cliente in clientes:
+            resultado = self.send_notification(
+                usuario=cliente,
+                titulo=titulo,
+                mensaje=mensaje,
+                tipo=tipo,
+                datos_extra=datos_extra,
+                url=url
+            )
+            resultados.append({
+                'cliente': cliente.username,
+                'exitosos': resultado.get('exitosos', 0),
+                'fallidos': resultado.get('fallidos', 0)
+            })
+            total_exitosos += resultado.get('exitosos', 0)
+            total_fallidos += resultado.get('fallidos', 0)
+
+        return {
+            'total_exitosos': total_exitosos,
+            'total_fallidos': total_fallidos,
+            'clientes_notificados': len([r for r in resultados if r['exitosos'] > 0]),
+            'detalles': resultados
         }
     
     def send_compra_exitosa(self, compra) -> Dict[str, Any]:
@@ -256,6 +350,85 @@ class PushNotificationService:
                 'pagado': bool(compra.pagado_en)
             },
             url=f'/mis-pedidos/{compra.id}'
+        )
+
+    def send_nueva_compra_admin(self, compra) -> Dict[str, Any]:
+        """
+        Notifica a administradores sobre una nueva compra realizada por cliente.
+
+        Args:
+            compra: Instancia del modelo Compra
+        """
+        titulo = '🛒 Nueva Compra Realizada'
+        mensaje = f"El cliente {compra.cliente.nombre} realizó una compra #{compra.id} por ${compra.total}"
+
+        return self.send_to_administradores(
+            titulo=titulo,
+            mensaje=mensaje,
+            tipo='nueva_compra',
+            datos_extra={
+                'compra_id': compra.id,
+                'cliente_id': compra.cliente.id,
+                'cliente_nombre': compra.cliente.nombre,
+                'total': float(compra.total),
+                'items_count': compra.items.count(),
+                'pagado': bool(compra.pagado_en)
+            },
+            url=f'/admin/compra/compra/{compra.id}/change/'
+        )
+
+    def send_nuevo_pago_admin(self, compra) -> Dict[str, Any]:
+        """
+        Notifica a administradores sobre un nuevo pago confirmado.
+
+        Args:
+            compra: Instancia del modelo Compra
+        """
+        titulo = '💰 Nuevo Pago Confirmado'
+        mensaje = f"El cliente {compra.cliente.nombre} confirmó el pago de la compra #{compra.id} por ${compra.total}"
+
+        return self.send_to_administradores(
+            titulo=titulo,
+            mensaje=mensaje,
+            tipo='nuevo_pago',
+            datos_extra={
+                'compra_id': compra.id,
+                'cliente_id': compra.cliente.id,
+                'cliente_nombre': compra.cliente.nombre,
+                'total': float(compra.total),
+                'metodo_pago': getattr(compra, 'stripe_payment_intent', 'N/A')[:10] + '...' if getattr(compra, 'stripe_payment_intent', None) else 'N/A'
+            },
+            url=f'/admin/compra/compra/{compra.id}/change/'
+        )
+
+    def send_nueva_promocion_clientes(self, promocion) -> Dict[str, Any]:
+        """
+        Notifica a todos los clientes sobre una nueva promoción.
+
+        Args:
+            promocion: Instancia del modelo Promocion
+        """
+        if promocion.tipo_descuento == 'porcentaje':
+            descuento_texto = f"{promocion.valor_descuento}% de descuento"
+        else:
+            descuento_texto = f"${promocion.valor_descuento} de descuento"
+
+        titulo = '🎉 ¡Nueva Promoción Disponible!'
+        mensaje = f"{descuento_texto} en {promocion.nombre}. {promocion.descripcion[:50]}..."
+
+        return self.send_to_all_clientes(
+            titulo=titulo,
+            mensaje=mensaje,
+            tipo='promocion',
+            datos_extra={
+                'promocion_id': promocion.id,
+                'codigo': promocion.codigo,
+                'tipo_descuento': promocion.tipo_descuento,
+                'valor_descuento': float(promocion.valor_descuento),
+                'monto_minimo': float(promocion.monto_minimo) if promocion.monto_minimo else None,
+                'fecha_fin': promocion.fecha_fin.isoformat() if promocion.fecha_fin else None
+            },
+            url=f'/productos?promocion={promocion.codigo}'
         )
 
 

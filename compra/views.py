@@ -211,8 +211,8 @@ class CompraViewSet(viewsets.ModelViewSet):
                             compra.recalc_total()
 
             logger.info(f'Compra #{compra.id} creada exitosamente por usuario {user.username}')
-            
-            # ✅ Enviar notificación push de compra creada
+
+            # ✅ Enviar notificación push de compra creada al cliente
             try:
                 from notificaciones.push_service import push_service
                 push_service.send_notification(
@@ -227,7 +227,15 @@ class CompraViewSet(viewsets.ModelViewSet):
                     url=f'/mis-pedidos/{compra.id}'
                 )
             except Exception as e:
-                logger.warning(f'No se pudo enviar notificación push: {str(e)}')
+                logger.warning(f'No se pudo enviar notificación push al cliente: {str(e)}')
+
+            # 🔔 Notificar a administradores sobre nueva compra
+            try:
+                from notificaciones.push_service import push_service
+                resultado = push_service.send_nueva_compra_admin(compra)
+                logger.info(f'Notificación de nueva compra enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+            except Exception as e:
+                logger.warning(f'No se pudo enviar notificación a administradores: {str(e)}')
             
             return Response(
                 CompraSerializer(compra).data,
@@ -281,12 +289,20 @@ class CompraViewSet(viewsets.ModelViewSet):
         
         logger.info(f'Compra #{compra.id} marcada como pagada')
         
-        # ✅ Enviar notificación push de pago confirmado
+        # ✅ Enviar notificación push de pago confirmado al cliente
         try:
             from notificaciones.push_service import push_service
             push_service.send_compra_exitosa(compra)
         except Exception as e:
-            logger.warning(f'No se pudo enviar notificación push: {str(e)}')
+            logger.warning(f'No se pudo enviar notificación push al cliente: {str(e)}')
+
+        # 🔔 Notificar a administradores sobre nuevo pago confirmado
+        try:
+            from notificaciones.push_service import push_service
+            resultado = push_service.send_nuevo_pago_admin(compra)
+            logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+        except Exception as e:
+            logger.warning(f'No se pudo enviar notificación de pago a administradores: {str(e)}')
         
         return Response(CompraSerializer(compra).data)
 
@@ -500,13 +516,21 @@ class StripeWebhookView(APIView):
                         f'Total: ${compra.total}'
                     )
                     
-                    # ✅ Enviar notificación push de pago confirmado vía Stripe
+                    # ✅ Enviar notificación push de pago confirmado vía Stripe al cliente
                     try:
                         from notificaciones.push_service import push_service
                         push_service.send_compra_exitosa(compra)
                         logger.info(f'Notificación push enviada para compra #{compra_id}')
                     except Exception as e:
                         logger.warning(f'No se pudo enviar notificación push para compra #{compra_id}: {str(e)}')
+
+                    # 🔔 Notificar a administradores sobre nuevo pago confirmado
+                    try:
+                        from notificaciones.push_service import push_service
+                        resultado = push_service.send_nuevo_pago_admin(compra)
+                        logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+                    except Exception as e:
+                        logger.warning(f'No se pudo enviar notificación de pago a administradores para compra #{compra_id}: {str(e)}')
                 
             except Compra.DoesNotExist:
                 logger.error(f'Compra {compra_id} no encontrada en webhook')
@@ -538,13 +562,21 @@ class StripeWebhookView(APIView):
                             compra.pago_referencia = payment_intent_id
                             compra.save(update_fields=['pagado_en', 'pago_referencia'])
                             
-                            # Enviar notificación push
+                            # Enviar notificación push al cliente
                             try:
                                 from notificaciones.push_service import push_service
                                 push_service.send_compra_exitosa(compra)
                                 logger.info(f'Notificación push enviada para compra #{compra.id}')
                             except Exception as e:
                                 logger.warning(f'No se pudo enviar notificación push: {str(e)}')
+
+                            # 🔔 Notificar a administradores sobre nuevo pago confirmado
+                            try:
+                                from notificaciones.push_service import push_service
+                                resultado = push_service.send_nuevo_pago_admin(compra)
+                                logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+                            except Exception as e:
+                                logger.warning(f'No se pudo enviar notificación de pago a administradores para compra #{compra.id}: {str(e)}')
                     except Exception as e:
                         logger.warning(f'Error procesando charge para payment_intent {payment_intent_id}: {str(e)}')
 
