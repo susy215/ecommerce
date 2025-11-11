@@ -1,0 +1,45 @@
+# ============================================
+# VARIABLES DE ENTORNO PARA PRODUCCIÓN AWS
+# ============================================
+# Copia este contenido a .env en tu servidor EC2
+# y llena los valores con tus datos reales
+
+# ===== DJANGO =====
+DJANGO_SECRET_KEY=genera-una-clave-secreta-muy-segura-aqui-mínimo-50-caracteres
+DJANGO_DEBUG=False
+DJANGO_ALLOWED_HOSTS=tu-dominio.com,www.tu-dominio.com
+
+# ===== BASE DE DATOS RDS =====
+# Reemplaza con el endpoint de tu RDS
+DB_NAME=smartsales365
+DB_USER=smartsales365_admin
+DB_PASSWORD=tu-password-super-segura-de-rds
+DB_HOST=smartsales365-db.xxxxx.us-east-1.rds.amazonaws.com
+DB_PORT=5432
+
+# ===== STRIPE =====
+# Claves de producción (empiezan con sk_live_ y pk_live_)
+STRIPE_SECRET_KEY=sk_live_tu_clave_secreta_aqui
+STRIPE_PUBLISHABLE_KEY=pk_live_tu_clave_publica_aqui
+STRIPE_WEBHOOK_SECRET=whsec_tu_webhook_secret_aqui
+STRIPE_CURRENCY=usd
+
+# ===== FRONTEND =====
+# URL de tu frontend (React/Vite en Vercel u otro)
+FRONTEND_URL=https://tu-frontend.vercel.app
+
+# ===== CORS =====
+# URLs permitidas para CORS (separadas por comas)
+CORS_ALLOWED_ORIGINS=https://tu-frontend.vercel.app,https://www.tu-frontend.vercel.app
+CSRF_TRUSTED_ORIGINS=https://tu-dominio.com,https://www.tu-dominio.com
+
+# ===== PUSH NOTIFICATIONS (VAPID) =====
+# Genera con: python manage.py generate_vapid_keys
+VAPID_PRIVATE_KEY=tu-vapid-private-key-completa-aqui
+VAPID_PUBLIC_KEY=tu-vapid-public-key-completa-aqui
+VAPID_ADMIN_EMAIL=admin@tu-dominio.com
+
+# ===== EMAIL (Opcional - Configurar después si necesitas) =====
+# EMAIL_HOST_USER=tu-email@gmail.com
+# EMAIL_HOST_PASSWORD=tu-app-password
+
