@@ -6,14 +6,12 @@ from rest_framework.routers import DefaultRouter
 from .views import (
     PushSubscriptionViewSet,
     VAPIDPublicKeyView,
-    NotificacionHistorialViewSet,
-    NotificacionAdminViewSet
+    NotificacionHistorialViewSet
 )
 
 router = DefaultRouter()
 router.register(r'subscriptions', PushSubscriptionViewSet, basename='push-subscription')
 router.register(r'historial', NotificacionHistorialViewSet, basename='notificacion-historial')
-router.register(r'admin', NotificacionAdminViewSet, basename='notificacion-admin')
 
 urlpatterns = [
     path('', include(router.urls)),

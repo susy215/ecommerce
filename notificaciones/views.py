@@ -9,8 +9,8 @@ from django.conf import settings
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from drf_spectacular.types import OpenApiTypes
 
-from .models import PushSubscription, NotificacionEnviada, NotificacionAdmin
-from .serializers import PushSubscriptionSerializer, NotificacionEnviadaSerializer, NotificacionAdminSerializer
+from .models import PushSubscription, NotificacionEnviada
+from .serializers import PushSubscriptionSerializer, NotificacionEnviadaSerializer
 
 
 class PushSubscriptionViewSet(viewsets.ModelViewSet):
@@ -136,82 +136,4 @@ class NotificacionHistorialViewSet(viewsets.ReadOnlyModelViewSet):
         Por ahora solo retorna confirmación.
         """
         return Response({'status': 'Marcadas como leídas'})
-
-
-class NotificacionAdminViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet para gestionar notificaciones de administradores.
-    Solo administradores y vendedores pueden acceder.
-    """
-    serializer_class = NotificacionAdminSerializer
-    permission_classes = [permissions.IsAuthenticated]
-
-    def get_queryset(self):
-        """Solo retorna notificaciones del usuario autenticado"""
-        user = self.request.user
-        if user.rol not in ['admin', 'vendedor']:
-            return NotificacionAdmin.objects.none()
-        return NotificacionAdmin.objects.filter(usuario=user)
-
-    def get_permissions(self):
-        """Verificar permisos de admin/vendedor"""
-        if self.action in ['create', 'update', 'partial_update', 'destroy']:
-            # Solo admins pueden crear/modificar notificaciones
-            self.permission_classes = [permissions.IsAuthenticated]
-        return super().get_permissions()
-
-    def perform_create(self, serializer):
-        """Solo admins pueden crear notificaciones"""
-        user = self.request.user
-        if user.rol != 'admin':
-            from rest_framework.exceptions import PermissionDenied
-            raise PermissionDenied("Solo administradores pueden crear notificaciones")
-        serializer.save()
-
-    @extend_schema(
-        summary='Marcar notificación como leída',
-        description='Marca una notificación específica como leída',
-        responses={200: {'description': 'Notificación marcada como leída'}}
-    )
-    @action(detail=True, methods=['post'])
-    def marcar_leida(self, request, pk=None):
-        """Marcar notificación como leída"""
-        notification = self.get_object()
-        notification.marcar_como_leida()
-        return Response({'status': 'Notificación marcada como leída'})
-
-    @extend_schema(
-        summary='Marcar todas como leídas',
-        description='Marca todas las notificaciones del usuario como leídas',
-        responses={200: {'description': 'Todas las notificaciones marcadas como leídas'}}
-    )
-    @action(detail=False, methods=['post'])
-    def marcar_todas_leidas(self, request):
-        """Marcar todas las notificaciones como leídas"""
-        self.get_queryset().filter(leida=False).update(leida=True)
-        return Response({'status': 'Todas las notificaciones marcadas como leídas'})
-
-    @extend_schema(
-        summary='Obtener conteo de no leídas',
-        description='Retorna el número de notificaciones no leídas',
-        responses={
-            200: {
-                'description': 'Conteo de notificaciones no leídas',
-                'examples': [
-                    {
-                        'count': 5,
-                        'timestamp': '2025-11-10T22:45:00Z'
-                    }
-                ]
-            }
-        }
-    )
-    @action(detail=False, methods=['get'])
-    def no_leidas(self, request):
-        """Obtener conteo de notificaciones no leídas"""
-        count = self.get_queryset().filter(leida=False).count()
-        return Response({
-            'count': count,
-            'timestamp': timezone.now().isoformat()
-        })
 

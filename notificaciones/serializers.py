@@ -2,7 +2,7 @@
 Serializers para notificaciones push.
 """
 from rest_framework import serializers
-from .models import PushSubscription, NotificacionEnviada, NotificacionAdmin
+from .models import PushSubscription, NotificacionEnviada
 
 
 class PushSubscriptionSerializer(serializers.ModelSerializer):
@@ -36,25 +36,4 @@ class NotificacionEnviadaSerializer(serializers.ModelSerializer):
             'datos_extra', 'estado', 'estado_display', 'error', 'fecha_envio'
         ]
         read_only_fields = fields
-
-
-class NotificacionAdminSerializer(serializers.ModelSerializer):
-    """
-    Serializer para notificaciones de administradores.
-    """
-    tipo_display = serializers.CharField(source='get_tipo_display', read_only=True)
-    usuario_display = serializers.CharField(source='usuario.get_full_name', read_only=True)
-
-    class Meta:
-        model = NotificacionAdmin
-        fields = [
-            'id', 'tipo', 'tipo_display', 'titulo', 'mensaje',
-            'url', 'datos', 'leida', 'creada', 'usuario_display'
-        ]
-        read_only_fields = ['id', 'creada', 'usuario_display']
-
-    def create(self, validated_data):
-        """Asignar usuario automáticamente"""
-        validated_data['usuario'] = self.context['request'].user
-        return super().create(validated_data)
 
