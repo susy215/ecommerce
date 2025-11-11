@@ -125,10 +125,14 @@
             text-align: center;
             font-size: 2.25rem;
             font-weight: 700;
-            margin-bottom: 64px;
+            margin-bottom: 48px;
             color: var(--text-primary);
             letter-spacing: -0.02em;
             line-height: 1.2;
+        }
+
+        .quick-access .section-title {
+            margin-bottom: 40px;
         }
 
         .features-grid {
@@ -573,20 +577,22 @@
 
         /* Acceso Rápido */
         .quick-access {
-            padding: 100px 0;
+            padding: 60px 0 80px;
             background: var(--background-secondary);
         }
 
         .access-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
-            gap: 32px;
+            grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+            gap: 24px;
+            max-width: 900px;
+            margin: 0 auto;
         }
 
         .access-card {
             background: var(--background);
             border-radius: var(--radius-lg);
-            padding: 32px 24px;
+            padding: 28px 20px;
             border: 1px solid var(--border-color);
             text-decoration: none;
             color: var(--text-primary);
@@ -594,6 +600,7 @@
             position: relative;
             overflow: hidden;
             display: block;
+            text-align: center;
         }
 
         .access-card::before {
@@ -777,7 +784,7 @@
             }
 
             .access-grid {
-                grid-template-columns: 1fr;
+                grid-template-columns: repeat(2, 1fr);
                 gap: 20px;
             }
 
@@ -824,6 +831,42 @@
             <p class="description">{{ descripcion }}</p>
         </div>
     </header>
+
+    <!-- Acceso Rápido -->
+    <section class="quick-access">
+        <div class="container">
+            <h2 class="section-title">🚀 Acceso Directo</h2>
+            <div class="access-grid">
+                <a href="/api/docs/" class="access-card" target="_blank">
+                    <div class="access-icon">📊</div>
+                    <h3>API Documentation</h3>
+                    <p>Documentación completa de la API REST con ejemplos interactivos</p>
+                    <div class="access-link">Ver Documentación →</div>
+                </a>
+
+                <a href="https://dashboard-eccomerce.vercel.app/" class="access-card" target="_blank">
+                    <div class="access-icon">🖥️</div>
+                    <h3>Dashboard Admin</h3>
+                    <p>Panel de administración completo para gestionar tu negocio</p>
+                    <div class="access-link">Acceder Dashboard →</div>
+                </a>
+
+                <a href="https://smartsales-frontend.vercel.app/" class="access-card" target="_blank">
+                    <div class="access-icon">📱</div>
+                    <h3>Frontend Cliente</h3>
+                    <p>Interfaz de cliente para compras y gestión de pedidos</p>
+                    <div class="access-link">Ir al Frontend →</div>
+                </a>
+
+                <a href="/admin/" class="access-card" target="_blank">
+                    <div class="access-icon">⚙️</div>
+                    <h3>Admin Django</h3>
+                    <p>Panel de administración nativo de Django</p>
+                    <div class="access-link">Panel Admin →</div>
+                </a>
+            </div>
+        </div>
+    </section>
 
     <!-- Características -->
     <section class="features">
@@ -1050,42 +1093,6 @@
                     <div class="api-description">{{ api.descripcion }}</div>
                 </div>
                 {% endfor %}
-            </div>
-        </div>
-    </section>
-
-    <!-- Acceso Rápido -->
-    <section class="quick-access">
-        <div class="container">
-            <h2 class="section-title">🚀 Acceso Rápido</h2>
-            <div class="access-grid">
-                <a href="/api/docs/" class="access-card" target="_blank">
-                    <div class="access-icon">📊</div>
-                    <h3>API Documentation</h3>
-                    <p>Documentación completa de la API REST con ejemplos interactivos</p>
-                    <div class="access-link">Ver Documentación →</div>
-                </a>
-
-                <a href="https://dashboard-eccomerce.vercel.app/" class="access-card" target="_blank">
-                    <div class="access-icon">🖥️</div>
-                    <h3>Dashboard Admin</h3>
-                    <p>Panel de administración completo para gestionar tu negocio</p>
-                    <div class="access-link">Acceder Dashboard →</div>
-                </a>
-
-                <a href="https://smartsales-frontend.vercel.app/" class="access-card" target="_blank">
-                    <div class="access-icon">📱</div>
-                    <h3>Frontend Cliente</h3>
-                    <p>Interfaz de cliente para compras y gestión de pedidos</p>
-                    <div class="access-link">Ir al Frontend →</div>
-                </a>
-
-                <a href="/admin/" class="access-card" target="_blank">
-                    <div class="access-icon">⚙️</div>
-                    <h3>Admin Django</h3>
-                    <p>Panel de administración nativo de Django</p>
-                    <div class="access-link">Panel Admin →</div>
-                </a>
             </div>
         </div>
     </section>
