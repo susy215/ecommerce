@@ -487,6 +487,45 @@
             font-size: 1rem;
         }
 
+        .showcase-description {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 48px;
+            font-weight: 400;
+        }
+
+        .app-stats {
+            margin-top: 48px;
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 24px;
+            text-align: center;
+        }
+
+        .stat-item {
+            background: var(--background);
+            border-radius: var(--radius-md);
+            padding: 24px 16px;
+            border: 1px solid var(--border-color);
+        }
+
+        .stat-number {
+            font-size: 2rem;
+            font-weight: 800;
+            color: var(--accent-color);
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .stat-label {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
         /* API Endpoints */
         .api-section {
             padding: 100px 0;
@@ -530,6 +569,88 @@
             color: var(--text-secondary);
             font-size: 0.9rem;
             line-height: 1.5;
+        }
+
+        /* Acceso Rápido */
+        .quick-access {
+            padding: 100px 0;
+            background: var(--background-secondary);
+        }
+
+        .access-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 32px;
+        }
+
+        .access-card {
+            background: var(--background);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            border: 1px solid var(--border-color);
+            text-decoration: none;
+            color: var(--text-primary);
+            transition: var(--transition-normal);
+            position: relative;
+            overflow: hidden;
+            display: block;
+        }
+
+        .access-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: linear-gradient(135deg, rgba(59, 130, 246, 0.02) 0%, rgba(59, 130, 246, 0.08) 100%);
+            opacity: 0;
+            transition: var(--transition-normal);
+        }
+
+        .access-card:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-xl);
+            transform: translateY(-4px);
+            color: var(--text-primary);
+        }
+
+        .access-card:hover::before {
+            opacity: 1;
+        }
+
+        .access-icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            display: block;
+        }
+
+        .access-card h3 {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            color: var(--text-primary);
+        }
+
+        .access-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+            margin-bottom: 20px;
+        }
+
+        .access-link {
+            color: var(--accent-color);
+            font-weight: 600;
+            font-size: 0.9rem;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            transition: var(--transition-fast);
+        }
+
+        .access-card:hover .access-link {
+            color: var(--accent-hover);
+            transform: translateX(4px);
         }
 
         /* Footer */
@@ -639,6 +760,29 @@
 
             .benefit-text {
                 text-align: center;
+            }
+
+            .app-stats {
+                grid-template-columns: 1fr;
+                gap: 16px;
+                margin-top: 32px;
+            }
+
+            .stat-item {
+                padding: 20px 16px;
+            }
+
+            .stat-number {
+                font-size: 1.75rem;
+            }
+
+            .access-grid {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+
+            .access-card {
+                padding: 24px 20px;
             }
         }
 
@@ -839,38 +983,55 @@
                 </div>
 
                 <div class="app-showcase">
-                    <h3>🚀 Funciona en Cualquier Momento</h3>
+                    <h3>🚀 Potencia Total en Tu Bolsillo</h3>
+                    <p class="showcase-description">SmartSales365 funciona donde tú estés, cuando lo necesites</p>
+
                     <div class="app-benefits">
                         <div class="benefit-item">
                             <div class="benefit-icon">⚡</div>
                             <div class="benefit-text">
-                                <strong>Acceso Instantáneo</strong><br>
-                                Desde cualquier lugar con conexión a internet
+                                <strong>Velocidad Extrema</strong><br>
+                                Acceso instantáneo desde cualquier dispositivo con internet
                             </div>
                         </div>
 
                         <div class="benefit-item">
                             <div class="benefit-icon">🔒</div>
                             <div class="benefit-text">
-                                <strong>Seguro y Confiable</strong><br>
-                                Tus datos protegidos con encriptación de grado bancario
+                                <strong>Seguridad Bancaria</strong><br>
+                                Encriptación SSL de grado bancario protege tus datos 24/7
                             </div>
                         </div>
 
                         <div class="benefit-item">
                             <div class="benefit-icon">📱</div>
                             <div class="benefit-text">
-                                <strong>Compatible</strong><br>
-                                iOS y Android, tablets y teléfonos
+                                <strong>Multiplataforma</strong><br>
+                                Compatible con iOS, Android, tablets y navegadores web
                             </div>
                         </div>
 
                         <div class="benefit-item">
                             <div class="benefit-icon">🔔</div>
                             <div class="benefit-text">
-                                <strong>Notificaciones</strong><br>
-                                Nunca pierdas una venta importante
+                                <strong>Alertas Inteligentes</strong><br>
+                                Notificaciones push para pedidos, pagos y oportunidades
                             </div>
+                        </div>
+                    </div>
+
+                    <div class="app-stats">
+                        <div class="stat-item">
+                            <div class="stat-number">24/7</div>
+                            <div class="stat-label">Disponibilidad</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">99.9%</div>
+                            <div class="stat-label">Uptime</div>
+                        </div>
+                        <div class="stat-item">
+                            <div class="stat-number">∞</div>
+                            <div class="stat-label">Escalabilidad</div>
                         </div>
                     </div>
                 </div>
@@ -889,6 +1050,42 @@
                     <div class="api-description">{{ api.descripcion }}</div>
                 </div>
                 {% endfor %}
+            </div>
+        </div>
+    </section>
+
+    <!-- Acceso Rápido -->
+    <section class="quick-access">
+        <div class="container">
+            <h2 class="section-title">🚀 Acceso Rápido</h2>
+            <div class="access-grid">
+                <a href="/api/docs/" class="access-card" target="_blank">
+                    <div class="access-icon">📊</div>
+                    <h3>API Documentation</h3>
+                    <p>Documentación completa de la API REST con ejemplos interactivos</p>
+                    <div class="access-link">Ver Documentación →</div>
+                </a>
+
+                <a href="https://dashboard-eccomerce.vercel.app/" class="access-card" target="_blank">
+                    <div class="access-icon">🖥️</div>
+                    <h3>Dashboard Admin</h3>
+                    <p>Panel de administración completo para gestionar tu negocio</p>
+                    <div class="access-link">Acceder Dashboard →</div>
+                </a>
+
+                <a href="https://smartsales-frontend.vercel.app/" class="access-card" target="_blank">
+                    <div class="access-icon">📱</div>
+                    <h3>Frontend Cliente</h3>
+                    <p>Interfaz de cliente para compras y gestión de pedidos</p>
+                    <div class="access-link">Ir al Frontend →</div>
+                </a>
+
+                <a href="/admin/" class="access-card" target="_blank">
+                    <div class="access-icon">⚙️</div>
+                    <h3>Admin Django</h3>
+                    <p>Panel de administración nativo de Django</p>
+                    <div class="access-link">Panel Admin →</div>
+                </a>
             </div>
         </div>
     </section>
