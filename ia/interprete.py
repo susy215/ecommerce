@@ -91,13 +91,37 @@ class InterpretadorPrompt:
         self._detectar_formato()
         self._detectar_fechas()
         self._detectar_tipo_reporte()
+        self._detectar_consulta_personalizada()  # Nueva función para consultas específicas
         self._detectar_agrupacion()
         self._detectar_metricas()
         self._detectar_filtros()
         self._detectar_orden()
         self._detectar_limite()
-        
+
         return self.resultado
+
+    def _detectar_consulta_personalizada(self):
+        """Detecta consultas con campos específicos mencionados"""
+        prompt_lower = self.prompt.lower()
+
+        # Detectar si pide campos específicos de clientes
+        campos_cliente = ['nombre del cliente', 'cantidad de compras', 'monto total', 'rango de fechas']
+        if all(campo in prompt_lower for campo in campos_cliente[:3]):  # Al menos nombre, cantidad, monto
+            self.resultado['consulta_personalizada'] = 'ventas_clientes_detallado'
+            self.resultado['tipo_reporte'] = 'ventas'
+            self.resultado['agrupar_por'] = ['cliente']
+
+            # Si menciona "rango de fechas", incluirlo
+            if 'rango de fechas' in prompt_lower:
+                self.resultado['incluir_rango_fechas'] = True
+
+        # Detectar consultas de top productos
+        if ('top' in prompt_lower and 'productos' in prompt_lower) or \
+           ('productos más vendidos' in prompt_lower) or \
+           ('productos más vendidos' in prompt_lower):
+            self.resultado['consulta_personalizada'] = 'top_productos'
+            self.resultado['tipo_reporte'] = 'productos'
+            self.resultado['orden'] = '-ventas_totales'
     
     def _detectar_formato(self):
         """Detecta el formato de salida"""
@@ -108,55 +132,75 @@ class InterpretadorPrompt:
                     return
     
     def _detectar_fechas(self):
-        """Detecta rangos de fechas en el prompt"""
-        # Patrón: dd/mm/yyyy
-        patron_fecha = r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})'
-        fechas = re.findall(patron_fecha, self.prompt)
-        
-        if len(fechas) >= 2:
-            # Rango de fechas
-            try:
-                fecha_inicio = datetime(
-                    int(fechas[0][2]), int(fechas[0][1]), int(fechas[0][0])
-                )
-                fecha_fin = datetime(
-                    int(fechas[1][2]), int(fechas[1][1]), int(fechas[1][0]), 23, 59, 59
-                )
-                self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
-                self.resultado['fecha_fin'] = timezone.make_aware(fecha_fin)
-            except ValueError:
-                pass
-        elif len(fechas) == 1:
-            # Una sola fecha
-            try:
-                fecha_inicio = datetime(
-                    int(fechas[0][2]), int(fechas[0][1]), int(fechas[0][0])
-                )
-                self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
-            except ValueError:
-                pass
-        
-        # Detectar meses específicos
+        """Detecta rangos de fechas en el prompt - MEJORADO"""
+        # Patrón mejorado: dd/mm/yyyy, dd-mm-yyyy, yyyy/mm/dd, yyyy-mm-dd
+        patrones_fecha = [
+            r'(\d{1,2})[/-](\d{1,2})[/-](\d{4})',  # dd/mm/yyyy
+            r'(\d{4})[/-](\d{1,2})[/-](\d{1,2})',  # yyyy/mm/dd
+        ]
+
+        fechas_encontradas = []
+
+        for patron in patrones_fecha:
+            matches = re.findall(patron, self.prompt)
+            for match in matches:
+                if len(match) == 3:
+                    # Determinar formato basado en el orden de los números
+                    nums = [int(x) for x in match]
+                    if nums[2] > 31:  # Año en tercera posición (yyyy/mm/dd)
+                        fecha = datetime(nums[2], nums[1], nums[0])
+                    elif nums[0] > 31:  # Año en primera posición (yyyy-mm-dd)
+                        fecha = datetime(nums[0], nums[1], nums[2])
+                    else:  # Asumir dd/mm/yyyy
+                        fecha = datetime(nums[2], nums[1], nums[0])
+                    fechas_encontradas.append(fecha)
+
+        # Detectar rango con palabras clave
+        if 'del' in self.prompt and 'al' in self.prompt:
+            # Buscar patrón "del DD/MM/YYYY al DD/MM/YYYY"
+            patron_rango = r'del\s+(\d{1,2}[/-]\d{1,2}[/-]\d{4})\s+al\s+(\d{1,2}[/-]\d{1,2}[/-]\d{4})'
+            match = re.search(patron_rango, self.prompt, re.IGNORECASE)
+            if match:
+                try:
+                    fecha_inicio = self._parse_fecha_flexible(match.group(1))
+                    fecha_fin = self._parse_fecha_flexible(match.group(2))
+                    fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59)
+
+                    self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
+                    self.resultado['fecha_fin'] = timezone.make_aware(fecha_fin)
+                    return  # Salir si encontramos un rango específico
+                except ValueError:
+                    pass
+
+        # Si tenemos fechas individuales, usar las primeras dos
+        if len(fechas_encontradas) >= 2:
+            fecha_inicio = min(fechas_encontradas)
+            fecha_fin = max(fechas_encontradas)
+            fecha_fin = fecha_fin.replace(hour=23, minute=59, second=59)
+
+            self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
+            self.resultado['fecha_fin'] = timezone.make_aware(fecha_fin)
+        elif len(fechas_encontradas) == 1:
+            self.resultado['fecha_inicio'] = timezone.make_aware(fechas_encontradas[0])
+
+        # Detectar meses específicos (código existente)
         for mes_nombre, mes_num in self.MESES.items():
             if mes_nombre in self.prompt:
-                # Detectar año
                 patron_anio = r'\b(20\d{2})\b'
                 anio_match = re.search(patron_anio, self.prompt)
                 anio = int(anio_match.group(1)) if anio_match else timezone.now().year
-                
+
                 fecha_inicio = datetime(anio, mes_num, 1)
-                # Último día del mes
                 if mes_num == 12:
                     fecha_fin = datetime(anio + 1, 1, 1) - timedelta(days=1)
                 else:
                     fecha_fin = datetime(anio, mes_num + 1, 1) - timedelta(days=1)
-                
-                # Hacer las fechas timezone-aware
+
                 self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
                 self.resultado['fecha_fin'] = timezone.make_aware(fecha_fin.replace(hour=23, minute=59, second=59))
                 break
-        
-        # Detectar rangos relativos
+
+        # Rangos relativos (código existente)
         if 'última semana' in self.prompt or 'ultima semana' in self.prompt:
             hoy = timezone.now()
             self.resultado['fecha_inicio'] = hoy - timedelta(days=7)
@@ -170,6 +214,18 @@ class InterpretadorPrompt:
             fecha_inicio = datetime(hoy.year, hoy.month, 1)
             self.resultado['fecha_inicio'] = timezone.make_aware(fecha_inicio)
             self.resultado['fecha_fin'] = hoy
+
+    def _parse_fecha_flexible(self, fecha_str):
+        """Parse fecha en múltiples formatos"""
+        # Intentar diferentes formatos
+        formatos = ['%d/%m/%Y', '%d-%m-%Y', '%Y/%m/%d', '%Y-%m-%d']
+
+        for formato in formatos:
+            try:
+                return datetime.strptime(fecha_str, formato)
+            except ValueError:
+                continue
+        raise ValueError(f"No se pudo parsear fecha: {fecha_str}")
     
     def _detectar_tipo_reporte(self):
         """Detecta el tipo de reporte solicitado"""
@@ -297,8 +353,17 @@ class GeneradorConsultas:
     
     def generar_consulta(self):
         """Genera y ejecuta la consulta según el tipo de reporte"""
+        # Verificar si es una consulta personalizada
+        if 'consulta_personalizada' in self.params:
+            consulta_tipo = self.params['consulta_personalizada']
+            if consulta_tipo == 'ventas_clientes_detallado':
+                return self._consulta_ventas_clientes_detallado()
+            elif consulta_tipo == 'top_productos':
+                return self._consulta_top_productos()
+
+        # Consultas normales
         tipo = self.params['tipo_reporte']
-        
+
         resultado = None
         if tipo == 'ventas':
             resultado = self._consulta_ventas()
@@ -310,11 +375,11 @@ class GeneradorConsultas:
             resultado = self._consulta_inventario()
         else:
             resultado = self._consulta_ventas()  # Default
-        
+
         # Convertir todos los Decimals a float para JSON serialization
         if resultado:
             resultado = convert_decimal_to_float(resultado)
-        
+
         return resultado
     
     def _aplicar_filtro_fechas(self, queryset, campo='fecha'):
@@ -365,67 +430,93 @@ class GeneradorConsultas:
             return resultado
         
         elif 'producto' in agrupar_por:
-            # Agrupar por producto
+            # Agrupar por producto - CORREGIDO para incluir filtros de fecha
             items = CompraItem.objects.filter(compra__in=queryset)
-            
+
             resultado = {
                 'tipo': 'por_producto',
-                'columnas': ['producto', 'sku', 'cantidad_vendida', 'total_vendido'],
+                'columnas': ['producto', 'sku', 'categoria', 'cantidad_vendida', 'total_vendido', 'precio_unitario_promedio'],
                 'datos': []
             }
-            
+
+            # Agrupar por producto con cálculos precisos
             datos = items.values(
                 'producto__nombre',
-                'producto__sku'
+                'producto__sku',
+                'producto__categoria__nombre'
             ).annotate(
                 cantidad_vendida=Sum('cantidad'),
-                total_vendido=Sum('subtotal')
+                total_vendido=Sum('subtotal'),
+                precio_unitario_promedio=Avg('precio_unitario'),
+                numero_ventas=Count('compra', distinct=True)
             ).order_by('-total_vendido' if self.params['orden'] == '-total' else 'producto__nombre')
-            
+
             if self.params['limite']:
                 datos = datos[:self.params['limite']]
-            
+
             for item in datos:
                 resultado['datos'].append({
                     'producto': item['producto__nombre'],
                     'sku': item['producto__sku'],
-                    'cantidad_vendida': item['cantidad_vendida'],
-                    'total_vendido': float(item['total_vendido'])
+                    'categoria': item['producto__categoria__nombre'] or 'Sin categoría',
+                    'cantidad_vendida': item['cantidad_vendida'] or 0,
+                    'total_vendido': float(item['total_vendido'] or 0),
+                    'precio_unitario_promedio': float(item['precio_unitario_promedio'] or 0),
+                    'numero_ventas': item['numero_ventas'] or 0
                 })
-            
+
             return resultado
         
         elif 'cliente' in agrupar_por:
-            # Agrupar por cliente
+            # Agrupar por cliente - MEJORADO con más métricas
             resultado = {
                 'tipo': 'por_cliente',
-                'columnas': ['cliente', 'email', 'cantidad_compras', 'total_pagado', 'fecha_primera', 'fecha_ultima'],
+                'columnas': ['cliente', 'email', 'telefono', 'cantidad_compras', 'total_pagado', 'promedio_compra', 'fecha_primera_compra', 'fecha_ultima_compra', 'dias_desde_ultima_compra'],
                 'datos': []
             }
-            
+
+            # Obtener fecha actual para calcular días desde última compra
+            from django.utils import timezone
+            hoy = timezone.now().date()
+
             datos = queryset.values(
                 'cliente__nombre',
-                'cliente__email'
+                'cliente__email',
+                'cliente__telefono'
             ).annotate(
                 cantidad_compras=Count('id'),
                 total_pagado=Sum('total'),
-                fecha_primera=Min('fecha'),
-                fecha_ultima=Max('fecha')
+                promedio_compra=Avg('total'),
+                fecha_primera_compra=Min('fecha'),
+                fecha_ultima_compra=Max('fecha')
             ).order_by('-total_pagado' if self.params['orden'] == '-total' else 'cliente__nombre')
-            
+
             if self.params['limite']:
                 datos = datos[:self.params['limite']]
-            
+
             for item in datos:
+                # Calcular días desde última compra
+                dias_desde_ultima = None
+                if item['fecha_ultima_compra']:
+                    fecha_ultima = item['fecha_ultima_compra'].date() if hasattr(item['fecha_ultima_compra'], 'date') else item['fecha_ultima_compra']
+                    if isinstance(fecha_ultima, str):
+                        from datetime import datetime
+                        fecha_ultima = datetime.fromisoformat(fecha_ultima.replace('Z', '+00:00')).date()
+                    dias_desde_ultima = (hoy - fecha_ultima).days
+
                 resultado['datos'].append({
                     'cliente': item['cliente__nombre'],
                     'email': item['cliente__email'],
+                    'telefono': item['cliente__telefono'] or 'Sin teléfono',
                     'cantidad_compras': item['cantidad_compras'],
                     'total_pagado': float(item['total_pagado'] or 0),
-                    'fecha_primera': item['fecha_primera'].strftime('%Y-%m-%d %H:%M') if item['fecha_primera'] else None,
-                    'fecha_ultima': item['fecha_ultima'].strftime('%Y-%m-%d %H:%M') if item['fecha_ultima'] else None,
+                    'promedio_compra': float(item['promedio_compra'] or 0),
+                    'fecha_primera_compra': item['fecha_primera_compra'].strftime('%Y-%m-%d') if item['fecha_primera_compra'] else None,
+                    'fecha_ultima_compra': item['fecha_ultima_compra'].strftime('%Y-%m-%d') if item['fecha_ultima_compra'] else None,
+                    'dias_desde_ultima_compra': dias_desde_ultima,
+                    'rango_fechas': f"{item['fecha_primera_compra'].strftime('%d/%m/%Y') if item['fecha_primera_compra'] else 'N/A'} - {item['fecha_ultima_compra'].strftime('%d/%m/%Y') if item['fecha_ultima_compra'] else 'N/A'}"
                 })
-            
+
             return resultado
         
         elif 'categoria' in agrupar_por:
@@ -520,32 +611,57 @@ class GeneradorConsultas:
     def _consulta_productos(self):
         """Genera reporte de productos"""
         from productos.models import Producto
-        
-        queryset = Producto.objects.filter(activo=True)
-        
+        from compra.models import CompraItem
+
+        # Base queryset con productos activos
+        productos = Producto.objects.filter(activo=True)
+
         resultado = {
             'tipo': 'productos',
-            'columnas': ['sku', 'nombre', 'categoria', 'precio', 'stock', 'ventas_totales'],
+            'columnas': ['sku', 'nombre', 'categoria', 'precio', 'stock', 'ventas_totales', 'total_vendido'],
             'datos': []
         }
-        
-        datos = queryset.annotate(
-            ventas_totales=Sum('compraitem__cantidad')
+
+        # Obtener items de compra con filtros de fecha aplicados
+        items_venta = CompraItem.objects.all()
+
+        # Aplicar filtros de fecha a través de las compras
+        if self.params['fecha_inicio'] or self.params['fecha_fin']:
+            compras_filtradas = Compra.objects.all()
+            compras_filtradas = self._aplicar_filtro_fechas(compras_filtradas, 'fecha')
+
+            # Filtrar solo compras pagadas para ventas reales
+            if 'pagado' not in self.params['filtros'] or self.params['filtros']['pagado'] is True:
+                compras_filtradas = compras_filtradas.filter(pagado_en__isnull=False)
+
+            items_venta = items_venta.filter(compra__in=compras_filtradas)
+
+        # Calcular estadísticas por producto
+        productos_con_ventas = productos.annotate(
+            ventas_totales=Sum(
+                'compraitem__cantidad',
+                filter=Q(compraitem__in=items_venta) if items_venta.exists() else Q(pk__isnull=True)
+            ),
+            total_vendido=Sum(
+                'compraitem__subtotal',
+                filter=Q(compraitem__in=items_venta) if items_venta.exists() else Q(pk__isnull=True)
+            )
         ).order_by('-ventas_totales' if self.params['orden'] == '-total' else 'nombre')
-        
+
         if self.params['limite']:
-            datos = datos[:self.params['limite']]
-        
-        for producto in datos:
+            productos_con_ventas = productos_con_ventas[:self.params['limite']]
+
+        for producto in productos_con_ventas:
             resultado['datos'].append({
                 'sku': producto.sku,
                 'nombre': producto.nombre,
                 'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
                 'precio': float(producto.precio),
                 'stock': producto.stock,
-                'ventas_totales': producto.ventas_totales or 0
+                'ventas_totales': producto.ventas_totales or 0,
+                'total_vendido': float(producto.total_vendido or 0)
             })
-        
+
         return resultado
     
     def _consulta_inventario(self):
@@ -576,5 +692,114 @@ class GeneradorConsultas:
                 'precio': float(producto.precio),
                 'valor_inventario': float(producto.precio * producto.stock)
             })
-        
+
+        return resultado
+
+    def _consulta_ventas_clientes_detallado(self):
+        """Consulta específica: ventas del período con nombre cliente, cantidad compras, monto total, rango fechas"""
+        from compra.models import Compra
+
+        # Base queryset con filtros aplicados
+        queryset = Compra.objects.select_related('cliente').all()
+        queryset = self._aplicar_filtro_fechas(queryset, 'fecha')
+
+        # Filtrar solo compras pagadas
+        if 'pagado' not in self.params['filtros'] or self.params['filtros']['pagado'] is True:
+            queryset = queryset.filter(pagado_en__isnull=False)
+
+        resultado = {
+            'tipo': 'ventas_clientes_detallado',
+            'columnas': ['cliente', 'email', 'cantidad_compras', 'monto_total', 'rango_fechas'],
+            'datos': []
+        }
+
+        datos = queryset.values(
+            'cliente__nombre',
+            'cliente__email'
+        ).annotate(
+            cantidad_compras=Count('id'),
+            monto_total=Sum('total'),
+            fecha_primera=Min('fecha'),
+            fecha_ultima=Max('fecha')
+        ).order_by('-monto_total')
+
+        if self.params['limite']:
+            datos = datos[:self.params['limite']]
+
+        for item in datos:
+            # Formatear rango de fechas
+            rango_fechas = "N/A - N/A"
+            if item['fecha_primera'] and item['fecha_ultima']:
+                fecha_inicio = item['fecha_primera'].strftime('%d/%m/%Y')
+                fecha_fin = item['fecha_ultima'].strftime('%d/%m/%Y')
+                rango_fechas = f"{fecha_inicio} - {fecha_fin}"
+
+            resultado['datos'].append({
+                'cliente': item['cliente__nombre'],
+                'email': item['cliente__email'],
+                'cantidad_compras': item['cantidad_compras'],
+                'monto_total': float(item['monto_total'] or 0),
+                'rango_fechas': rango_fechas
+            })
+
+        return resultado
+
+    def _consulta_top_productos(self):
+        """Consulta específica: top productos más vendidos"""
+        from productos.models import Producto
+        from compra.models import CompraItem
+
+        # Base con productos activos
+        productos = Producto.objects.filter(activo=True)
+
+        resultado = {
+            'tipo': 'top_productos',
+            'columnas': ['ranking', 'producto', 'sku', 'categoria', 'ventas_totales', 'total_vendido', 'precio_promedio'],
+            'datos': []
+        }
+
+        # Obtener items de compra con filtros de fecha
+        items_venta = CompraItem.objects.all()
+
+        # Aplicar filtros de fecha a través de compras
+        if self.params['fecha_inicio'] or self.params['fecha_fin']:
+            compras_filtradas = Compra.objects.all()
+            compras_filtradas = self._aplicar_filtro_fechas(compras_filtradas, 'fecha')
+
+            # Solo compras pagadas
+            if 'pagado' not in self.params['filtros'] or self.params['filtros']['pagado'] is True:
+                compras_filtradas = compras_filtradas.filter(pagado_en__isnull=False)
+
+            items_venta = items_venta.filter(compra__in=compras_filtradas)
+
+        # Calcular estadísticas por producto
+        productos_con_ventas = productos.annotate(
+            ventas_totales=Sum(
+                'compraitem__cantidad',
+                filter=Q(compraitem__in=items_venta) if items_venta.exists() else Q(pk__isnull=True)
+            ),
+            total_vendido=Sum(
+                'compraitem__subtotal',
+                filter=Q(compraitem__in=items_venta) if items_venta.exists() else Q(pk__isnull=True)
+            ),
+            precio_promedio=Avg(
+                'compraitem__precio_unitario',
+                filter=Q(compraitem__in=items_venta) if items_venta.exists() else Q(pk__isnull=True)
+            )
+        ).filter(ventas_totales__gt=0).order_by('-ventas_totales')  # Solo productos con ventas > 0
+
+        if self.params['limite']:
+            productos_con_ventas = productos_con_ventas[:self.params['limite']]
+
+        for ranking, producto in enumerate(productos_con_ventas, 1):
+            resultado['datos'].append({
+                'ranking': ranking,
+                'producto': producto.nombre,
+                'sku': producto.sku,
+                'categoria': producto.categoria.nombre if producto.categoria else 'Sin categoría',
+                'ventas_totales': producto.ventas_totales or 0,
+                'total_vendido': float(producto.total_vendido or 0),
+                'precio_promedio': float(producto.precio_promedio or producto.precio)
+            })
+
         return resultado
