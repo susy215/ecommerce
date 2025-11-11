@@ -206,91 +206,191 @@
         }
 
         .manual-container {
-            max-width: 800px;
+            max-width: 900px;
             margin: 0 auto;
         }
 
-        .manual-grid {
+        .manual-intro {
+            text-align: center;
+            font-size: 1.125rem;
+            color: var(--text-secondary);
+            margin-bottom: 48px;
+            font-weight: 400;
+        }
+
+        .user-features {
             display: grid;
-            grid-template-columns: 1fr;
-            gap: 48px;
-        }
-
-        .manual-step {
-            display: flex;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
             gap: 24px;
-            align-items: flex-start;
+            margin-bottom: 64px;
         }
 
-        .step-number {
-            background: var(--accent-color);
-            color: white;
-            width: 32px;
-            height: 32px;
-            border-radius: 50%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
+        .user-feature-card {
+            background: var(--background);
+            border-radius: var(--radius-lg);
+            padding: 32px 24px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+            transition: all 0.2s ease;
+        }
+
+        .user-feature-card:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .feature-emoji {
+            font-size: 3rem;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .user-feature-card h3 {
+            font-size: 1.25rem;
             font-weight: 600;
-            font-size: 0.875rem;
+            color: var(--text-primary);
+            margin-bottom: 12px;
+        }
+
+        .user-feature-card p {
+            color: var(--text-secondary);
+            line-height: 1.6;
+            font-size: 0.95rem;
+        }
+
+        .voice-commands-showcase {
+            background: var(--background-secondary);
+            border-radius: var(--radius-lg);
+            padding: 40px 32px;
+            margin-bottom: 48px;
+            border: 1px solid var(--border-color);
+        }
+
+        .voice-commands-showcase h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 16px;
+            text-align: center;
+        }
+
+        .voice-description {
+            text-align: center;
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+            margin-bottom: 32px;
+        }
+
+        .voice-examples {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 24px;
+            margin-bottom: 32px;
+        }
+
+        .voice-example {
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            background: var(--background);
+            padding: 20px;
+            border-radius: var(--radius-md);
+            border: 1px solid var(--border-light);
+        }
+
+        .voice-icon {
+            font-size: 1.5rem;
             flex-shrink: 0;
             margin-top: 4px;
         }
 
-        .step-content h3 {
-            font-size: 1.125rem;
+        .voice-content {
+            flex: 1;
+        }
+
+        .voice-command {
             font-weight: 600;
-            color: var(--text-primary);
-            margin-bottom: 8px;
-        }
-
-        .step-content p {
-            color: var(--text-secondary);
-            line-height: 1.6;
-            margin-bottom: 16px;
-        }
-
-        .code-example {
-            background: var(--background-muted);
-            border: 1px solid var(--border-color);
-            border-radius: var(--radius-md);
-            padding: 16px;
-            font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Fira Code', monospace;
-            font-size: 0.875rem;
-            line-height: 1.5;
-            overflow-x: auto;
-        }
-
-        .command-examples {
-            margin-top: 32px;
-            padding: 24px;
-            background: var(--background-secondary);
-            border-radius: var(--radius-lg);
-            border: 1px solid var(--border-color);
-        }
-
-        .command-examples h3 {
-            font-size: 1.125rem;
-            font-weight: 600;
-            margin-bottom: 16px;
-            color: var(--text-primary);
-        }
-
-        .command-list {
-            display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-            gap: 12px;
-        }
-
-        .command-item {
-            background: var(--background);
-            padding: 12px 16px;
-            border-radius: var(--radius-md);
-            border: 1px solid var(--border-color);
-            font-family: monospace;
-            font-size: 0.875rem;
             color: var(--accent-color);
+            font-size: 1rem;
+            margin-bottom: 4px;
+            font-family: monospace;
+        }
+
+        .voice-result {
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+            font-style: italic;
+        }
+
+        .voice-tip {
+            background: linear-gradient(135deg, var(--accent-color), var(--accent-light));
+            color: white;
+            padding: 20px 24px;
+            border-radius: var(--radius-md);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+        }
+
+        .tip-icon {
+            font-size: 1.5rem;
+            flex-shrink: 0;
+            margin-top: 2px;
+        }
+
+        .voice-tip p {
+            margin: 0;
+            line-height: 1.6;
+        }
+
+        .app-showcase {
             text-align: center;
+        }
+
+        .app-showcase h3 {
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin-bottom: 32px;
+        }
+
+        .app-benefits {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 24px;
+        }
+
+        .benefit-item {
+            background: var(--background);
+            border-radius: var(--radius-lg);
+            padding: 24px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            align-items: flex-start;
+            gap: 16px;
+            transition: all 0.2s ease;
+        }
+
+        .benefit-item:hover {
+            border-color: var(--accent-color);
+            box-shadow: var(--shadow-md);
+        }
+
+        .benefit-icon {
+            font-size: 2rem;
+            flex-shrink: 0;
+        }
+
+        .benefit-text {
+            text-align: left;
+            line-height: 1.5;
+        }
+
+        .benefit-text strong {
+            color: var(--text-primary);
+            display: block;
+            margin-bottom: 4px;
+            font-size: 1rem;
         }
 
         /* API Endpoints */
@@ -375,17 +475,96 @@
                 grid-template-columns: 1fr;
             }
 
-            .manual-step {
-                flex-direction: column;
+            .section-title {
+                font-size: 1.75rem;
+            }
+
+            /* Flutter Manual Mobile */
+            .manual-intro {
+                font-size: 1rem;
+            }
+
+            .user-features {
+                grid-template-columns: 1fr;
+                gap: 20px;
+                margin-bottom: 48px;
+            }
+
+            .user-feature-card {
+                padding: 24px 20px;
+            }
+
+            .feature-emoji {
+                font-size: 2.5rem;
+            }
+
+            .voice-commands-showcase {
+                padding: 32px 20px;
+            }
+
+            .voice-commands-showcase h3 {
+                font-size: 1.25rem;
+            }
+
+            .voice-description {
+                font-size: 1rem;
+            }
+
+            .voice-examples {
+                grid-template-columns: 1fr;
                 gap: 16px;
             }
 
-            .command-list {
+            .voice-example {
+                padding: 16px;
+            }
+
+            .voice-tip {
+                padding: 16px 20px;
+            }
+
+            .app-benefits {
                 grid-template-columns: 1fr;
+                gap: 16px;
+            }
+
+            .benefit-item {
+                padding: 20px;
+                flex-direction: column;
+                text-align: center;
+                gap: 12px;
+            }
+
+            .benefit-text {
+                text-align: center;
+            }
+        }
+
+        @media (max-width: 480px) {
+            .header {
+                padding: 40px 0 30px;
+            }
+
+            .logo {
+                font-size: 1.875rem;
+            }
+
+            .subtitle {
+                font-size: 1rem;
+                margin-bottom: 16px;
             }
 
             .section-title {
-                font-size: 1.75rem;
+                font-size: 1.5rem;
+                margin-bottom: 48px;
+            }
+
+            .user-feature-card {
+                padding: 20px 16px;
+            }
+
+            .voice-commands-showcase {
+                padding: 24px 16px;
             }
         }
     </style>
@@ -509,72 +688,113 @@
     <section class="flutter-manual">
         <div class="container">
             <div class="manual-container">
-                <h2 class="section-title">Manual de Usuario - Flutter App</h2>
+                <h2 class="section-title">📱 Cómo Usar SmartSales365 Móvil</h2>
+                <p class="manual-intro">Descubre lo fácil que es gestionar tu negocio desde tu teléfono</p>
 
-                <div class="manual-grid">
-                    <div class="manual-step">
-                        <div class="step-number">1</div>
-                        <div class="step-content">
-                            <h3>Instalación</h3>
-                            <p>Descarga la app desde Google Play Store o Apple App Store. La aplicación se instala automáticamente sin configuración adicional.</p>
-                        </div>
+                <div class="user-features">
+                    <div class="user-feature-card">
+                        <div class="feature-emoji">📦</div>
+                        <h3>Catálogo de Productos</h3>
+                        <p>Explora miles de productos organizados por categorías. Fotos de alta calidad y descripciones detalladas.</p>
                     </div>
 
-                    <div class="manual-step">
-                        <div class="step-number">2</div>
-                        <div class="step-content">
-                            <h3>Registro / Inicio de Sesión</h3>
-                            <p>Crea tu cuenta como cliente o inicia sesión si ya tienes una. Los administradores deben usar sus credenciales del panel web.</p>
-                        </div>
+                    <div class="user-feature-card">
+                        <div class="feature-emoji">🛒</div>
+                        <h3>Compras Rápidas</h3>
+                        <p>Agrega productos al carrito con un toque. Pago seguro con tarjeta, efectivo o transferencias.</p>
                     </div>
 
-                    <div class="manual-step">
-                        <div class="step-number">3</div>
-                        <div class="step-content">
-                            <h3>Navegación Principal</h3>
-                            <p>Usa el menú inferior para navegar entre: Inicio, Productos, Carrito, Pedidos y Perfil. El drawer lateral contiene opciones adicionales.</p>
-                        </div>
+                    <div class="user-feature-card">
+                        <div class="feature-emoji">📊</div>
+                        <h3>Reportes Inteligentes</h3>
+                        <p>Pide reportes simplemente hablando. "Ventas de este mes" o "Productos más vendidos" - ¡y listo!</p>
                     </div>
 
-                    <div class="manual-step">
-                        <div class="step-number">4</div>
-                        <div class="step-content">
-                            <h3>Compras</h3>
-                            <p>Explora productos por categorías, agrega al carrito y realiza pagos seguros con Stripe. Recibe confirmaciones instantáneas.</p>
-                        </div>
-                    </div>
-
-                    <div class="manual-step">
-                        <div class="step-number">5</div>
-                        <div class="step-content">
-                            <h3>Reportes por Voz</h3>
-                            <p>Presiona el botón de micrófono y di comandos naturales como "ventas del mes" o "productos más vendidos".</p>
-                            <div class="code-example">
-// Ejemplo de uso programático
-final speech = stt.SpeechToText();
-await speech.initialize();
-final command = await speech.listenForCommand();</div>
-                        </div>
-                    </div>
-
-                    <div class="manual-step">
-                        <div class="step-number">6</div>
-                        <div class="step-content">
-                            <h3>Notificaciones</h3>
-                            <p>Recibe alertas de promociones, estados de pedidos y confirmaciones de pago. Las notificaciones llegan incluso con la app cerrada.</p>
-                        </div>
+                    <div class="user-feature-card">
+                        <div class="feature-emoji">🔔</div>
+                        <h3>Notificaciones Instantáneas</h3>
+                        <p>Recibe alertas de pedidos nuevos, pagos confirmados y ofertas especiales en tiempo real.</p>
                     </div>
                 </div>
 
-                <div class="command-examples">
-                    <h3>Comandos de Voz Disponibles</h3>
-                    <div class="command-list">
-                        <div class="command-item">"Ventas del mes"</div>
-                        <div class="command-item">"Top productos"</div>
-                        <div class="command-item">"Clientes activos"</div>
-                        <div class="command-item">"Inventario actual"</div>
-                        <div class="command-item">"Reporte PDF"</div>
-                        <div class="command-item">"Ventas por fecha"</div>
+                <div class="voice-commands-showcase">
+                    <h3>🎤 Reportes por Voz - ¡Habla Naturalmente!</h3>
+                    <p class="voice-description">Olvídate de menús complicados. Simplemente di lo que necesitas:</p>
+
+                    <div class="voice-examples">
+                        <div class="voice-example">
+                            <div class="voice-icon">🎯</div>
+                            <div class="voice-content">
+                                <div class="voice-command">"Ventas del mes pasado"</div>
+                                <div class="voice-result">→ Reporte PDF con análisis completo</div>
+                            </div>
+                        </div>
+
+                        <div class="voice-example">
+                            <div class="voice-icon">📈</div>
+                            <div class="voice-content">
+                                <div class="voice-command">"Top 5 productos"</div>
+                                <div class="voice-result">→ Lista de best-sellers con gráficos</div>
+                            </div>
+                        </div>
+
+                        <div class="voice-example">
+                            <div class="voice-icon">👥</div>
+                            <div class="voice-content">
+                                <div class="voice-command">"Clientes más activos"</div>
+                                <div class="voice-result">→ Análisis de comportamiento de compra</div>
+                            </div>
+                        </div>
+
+                        <div class="voice-example">
+                            <div class="voice-icon">📅</div>
+                            <div class="voice-content">
+                                <div class="voice-command">"Ventas entre fechas"</div>
+                                <div class="voice-result">→ Reporte personalizado por período</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="voice-tip">
+                        <div class="tip-icon">💡</div>
+                        <p><strong>Pro Tip:</strong> Di comandos naturales como si hablaras con un asistente. "Muéstrame las ventas de enero" o "Necesito ver el inventario actual" funcionan perfectamente.</p>
+                    </div>
+                </div>
+
+                <div class="app-showcase">
+                    <h3>🚀 Funciona en Cualquier Momento</h3>
+                    <div class="app-benefits">
+                        <div class="benefit-item">
+                            <div class="benefit-icon">⚡</div>
+                            <div class="benefit-text">
+                                <strong>Acceso Instantáneo</strong><br>
+                                Desde cualquier lugar con conexión a internet
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-icon">🔒</div>
+                            <div class="benefit-text">
+                                <strong>Seguro y Confiable</strong><br>
+                                Tus datos protegidos con encriptación de grado bancario
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-icon">📱</div>
+                            <div class="benefit-text">
+                                <strong>Compatible</strong><br>
+                                iOS y Android, tablets y teléfonos
+                            </div>
+                        </div>
+
+                        <div class="benefit-item">
+                            <div class="benefit-icon">🔔</div>
+                            <div class="benefit-text">
+                                <strong>Notificaciones</strong><br>
+                                Nunca pierdas una venta importante
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
