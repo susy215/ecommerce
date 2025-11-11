@@ -352,54 +352,6 @@ class PushNotificationService:
             url=f'/mis-pedidos/{compra.id}'
         )
 
-    def send_nueva_compra_admin(self, compra) -> Dict[str, Any]:
-        """
-        Notifica a administradores sobre una nueva compra realizada por cliente.
-
-        Args:
-            compra: Instancia del modelo Compra
-        """
-        titulo = '🛒 Nueva Compra Realizada'
-        mensaje = f"El cliente {compra.cliente.nombre} realizó una compra #{compra.id} por ${compra.total}"
-
-        return self.send_to_administradores(
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='nueva_compra',
-            datos_extra={
-                'compra_id': compra.id,
-                'cliente_id': compra.cliente.id,
-                'cliente_nombre': compra.cliente.nombre,
-                'total': float(compra.total),
-                'items_count': compra.items.count(),
-                'pagado': bool(compra.pagado_en)
-            },
-            url=f'/admin/compra/compra/{compra.id}/change/'
-        )
-
-    def send_nuevo_pago_admin(self, compra) -> Dict[str, Any]:
-        """
-        Notifica a administradores sobre un nuevo pago confirmado.
-
-        Args:
-            compra: Instancia del modelo Compra
-        """
-        titulo = '💰 Nuevo Pago Confirmado'
-        mensaje = f"El cliente {compra.cliente.nombre} confirmó el pago de la compra #{compra.id} por ${compra.total}"
-
-        return self.send_to_administradores(
-            titulo=titulo,
-            mensaje=mensaje,
-            tipo='nuevo_pago',
-            datos_extra={
-                'compra_id': compra.id,
-                'cliente_id': compra.cliente.id,
-                'cliente_nombre': compra.cliente.nombre,
-                'total': float(compra.total),
-                'metodo_pago': getattr(compra, 'stripe_payment_intent', 'N/A')[:10] + '...' if getattr(compra, 'stripe_payment_intent', None) else 'N/A'
-            },
-            url=f'/admin/compra/compra/{compra.id}/change/'
-        )
 
     def send_nueva_promocion_clientes(self, promocion) -> Dict[str, Any]:
         """
@@ -485,8 +437,7 @@ class PushNotificationService:
                         'mensaje': mensaje,
                         'url': url,
                         'datos': datos,
-                        'creada': notification.creada.isoformat(),
-                        'leida': False
+                        'creada': notification.creada.isoformat()
                     }
                 }
             )

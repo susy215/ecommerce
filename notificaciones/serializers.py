@@ -49,7 +49,7 @@ class NotificacionAdminSerializer(serializers.ModelSerializer):
         model = NotificacionAdmin
         fields = [
             'id', 'tipo', 'tipo_display', 'titulo', 'mensaje',
-            'url', 'datos', 'leida', 'creada', 'usuario_display'
+            'url', 'datos', 'creada', 'usuario_display'
         ]
         read_only_fields = ['id', 'creada', 'usuario_display']
 

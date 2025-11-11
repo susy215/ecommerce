@@ -159,7 +159,6 @@ class NotificacionAdmin(models.Model):
         null=True,
         help_text='Datos adicionales de la notificación (compra_id, cliente_id, etc.)'
     )
-    leida = models.BooleanField(default=False, db_index=True)
     creada = models.DateTimeField(auto_now_add=True, db_index=True)
 
     class Meta:
@@ -168,7 +167,7 @@ class NotificacionAdmin(models.Model):
         verbose_name = 'Notificación Admin'
         verbose_name_plural = 'Notificaciones Admin'
         indexes = [
-            models.Index(fields=['usuario', 'leida', '-creada']),
+            models.Index(fields=['usuario', '-creada']),
             models.Index(fields=['tipo', '-creada']),
             models.Index(fields=['-creada']),
         ]
@@ -176,8 +175,4 @@ class NotificacionAdmin(models.Model):
     def __str__(self):
         return f"{self.usuario.username} - {self.titulo} ({self.get_tipo_display()})"
 
-    def marcar_como_leida(self):
-        """Marcar notificación como leída"""
-        self.leida = True
-        self.save(update_fields=['leida'])
 
