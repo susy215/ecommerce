@@ -232,8 +232,8 @@ class CompraViewSet(viewsets.ModelViewSet):
             # 🔔 Notificar a administradores sobre nueva compra
             try:
                 from notificaciones.push_service import push_service
-                resultado = push_service.send_nueva_compra_admin(compra)
-                logger.info(f'Notificación de nueva compra enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+                notifications = push_service.send_nueva_compra_admin(compra)
+                logger.info(f'Notificación de nueva compra enviada a {len(notifications)} administradores')
             except Exception as e:
                 logger.warning(f'No se pudo enviar notificación a administradores: {str(e)}')
             
@@ -299,8 +299,8 @@ class CompraViewSet(viewsets.ModelViewSet):
         # 🔔 Notificar a administradores sobre nuevo pago confirmado
         try:
             from notificaciones.push_service import push_service
-            resultado = push_service.send_nuevo_pago_admin(compra)
-            logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+            notifications = push_service.send_nuevo_pago_admin(compra)
+            logger.info(f'Notificación de nuevo pago enviada a {len(notifications)} administradores')
         except Exception as e:
             logger.warning(f'No se pudo enviar notificación de pago a administradores: {str(e)}')
         
@@ -527,8 +527,8 @@ class StripeWebhookView(APIView):
                     # 🔔 Notificar a administradores sobre nuevo pago confirmado
                     try:
                         from notificaciones.push_service import push_service
-                        resultado = push_service.send_nuevo_pago_admin(compra)
-                        logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+                        notifications = push_service.send_nuevo_pago_admin(compra)
+                        logger.info(f'Notificación de nuevo pago enviada a {len(notifications)} administradores')
                     except Exception as e:
                         logger.warning(f'No se pudo enviar notificación de pago a administradores para compra #{compra_id}: {str(e)}')
                 
@@ -573,8 +573,8 @@ class StripeWebhookView(APIView):
                             # 🔔 Notificar a administradores sobre nuevo pago confirmado
                             try:
                                 from notificaciones.push_service import push_service
-                                resultado = push_service.send_nuevo_pago_admin(compra)
-                                logger.info(f'Notificación de nuevo pago enviada a administradores: {resultado.get("administradores_notificados", 0)} notificados')
+                                notifications = push_service.send_nuevo_pago_admin(compra)
+                                logger.info(f'Notificación de nuevo pago enviada a {len(notifications)} administradores')
                             except Exception as e:
                                 logger.warning(f'No se pudo enviar notificación de pago a administradores para compra #{compra.id}: {str(e)}')
                     except Exception as e:

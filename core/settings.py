@@ -47,6 +47,7 @@ ALLOWED_HOSTS = _csv_env('DJANGO_ALLOWED_HOSTS', 'localhost,127.0.0.1')
 
 INSTALLED_APPS = [
     'corsheaders',
+    'channels',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -281,6 +282,21 @@ LOGGING = {
             'handlers': ['console', 'file'],
             'level': 'INFO',
             'propagate': False,
+        },
+    },
+}
+
+# Configuración de Django Channels
+ASGI_APPLICATION = 'core.asgi.application'
+
+# Configuración de canales para notificaciones
+CHANNEL_LAYERS = {
+    'default': {
+        'BACKEND': 'channels_redis.core.RedisChannelLayer',
+        'CONFIG': {
+            "hosts": [os.environ.get('REDIS_URL', 'redis://127.0.0.1:6379/0')],
+            'capacity': 1000,  # Número máximo de mensajes en cola
+            'expiry': 60,  # Segundos para expirar mensajes no entregados
         },
     },
 }
