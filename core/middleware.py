@@ -8,6 +8,9 @@ from channels.middleware import BaseMiddleware
 
 logger = logging.getLogger(__name__)
 
+# Log para confirmar que el módulo se importa
+logger.info('🔧 JWTAuthMiddleware module loaded')
+
 class JWTAuthMiddleware(BaseMiddleware):
     """
     Middleware para autenticar WebSocket usando JWT tokens desde la URL.
@@ -18,9 +21,9 @@ class JWTAuthMiddleware(BaseMiddleware):
         super().__init__(inner)
 
     async def __call__(self, scope, receive, send):
-        try:
-            logger.info('🔍 JWT Middleware called for WebSocket connection')
+        logger.info('🔍 JWT Middleware called for WebSocket connection')
 
+        try:
             # Imports dentro del método para evitar problemas de inicialización
             from django.contrib.auth import get_user_model
             from django.contrib.auth.models import AnonymousUser
@@ -40,13 +43,14 @@ class JWTAuthMiddleware(BaseMiddleware):
                     # Validar token JWT
                     access_token = AccessToken(token)
                     user_id = access_token.payload.get('user_id')
+                    logger.info(f'👤 User ID from token: {user_id}')
 
                     if user_id:
                         try:
                             User = get_user_model()
                             user = await User.objects.aget(pk=user_id)
                             scope['user'] = user
-                            logger.info(f'✅ WS JWT auth success: {user.username}')
+                            logger.info(f'✅ WS JWT auth success: {user.username} (rol: {user.rol})')
                             return await self.inner(scope, receive, send)
                         except User.DoesNotExist:
                             logger.warning(f'❌ WS JWT user not found: {user_id}')
@@ -54,6 +58,7 @@ class JWTAuthMiddleware(BaseMiddleware):
                     logger.warning(f'❌ WS JWT token error: {str(e)[:50]}')
             else:
                 # No hay token JWT, usar autenticación normal
+                logger.info('🔄 Using session auth (no JWT token)')
                 scope['user'] = await get_user(scope)
 
         except Exception as e:
@@ -62,4 +67,6 @@ class JWTAuthMiddleware(BaseMiddleware):
             from django.contrib.auth.models import AnonymousUser
             scope['user'] = AnonymousUser()
 
+        # Siempre continuar, aunque haya error
+        logger.info('🔄 Proceeding to WebSocket consumer')
         return await self.inner(scope, receive, send)
