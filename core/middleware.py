@@ -19,6 +19,8 @@ class JWTAuthMiddleware(BaseMiddleware):
 
     async def __call__(self, scope, receive, send):
         try:
+            logger.info('🔍 JWT Middleware called for WebSocket connection')
+
             # Imports dentro del método para evitar problemas de inicialización
             from django.contrib.auth import get_user_model
             from django.contrib.auth.models import AnonymousUser
@@ -29,7 +31,9 @@ class JWTAuthMiddleware(BaseMiddleware):
             query_string = scope.get('query_string', b'').decode()
             query_params = parse_qs(query_string)
 
+            logger.info(f'📋 Query string: {query_string}')
             token = query_params.get('token', [None])[0]
+            logger.info(f'🔑 Token found: {bool(token)}')
 
             if token:
                 try:
