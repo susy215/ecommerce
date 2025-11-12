@@ -2,10 +2,12 @@ asgiref==3.10.0
 attrs==25.4.0
 channels==4.2.0
 channels-redis==4.2.0
+daphne==4.1.2
 charset-normalizer==3.4.4
 Django==5.2.7
 django-cors-headers==4.9.0
 djangorestframework==3.16.1
+djangorestframework-simplejwt==5.4.0
 drf-spectacular==0.28.0
 et_xmlfile==2.0.0
 inflection==0.5.1
