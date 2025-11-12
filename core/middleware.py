@@ -4,11 +4,7 @@ Versión simplificada y robusta.
 """
 import logging
 from urllib.parse import parse_qs
-from django.contrib.auth import get_user_model
-from django.contrib.auth.models import AnonymousUser
-from rest_framework_simplejwt.tokens import AccessToken
 from channels.middleware import BaseMiddleware
-from channels.auth import get_user
 
 logger = logging.getLogger(__name__)
 
@@ -23,6 +19,12 @@ class JWTAuthMiddleware(BaseMiddleware):
 
     async def __call__(self, scope, receive, send):
         try:
+            # Imports dentro del método para evitar problemas de inicialización
+            from django.contrib.auth import get_user_model
+            from django.contrib.auth.models import AnonymousUser
+            from rest_framework_simplejwt.tokens import AccessToken
+            from channels.auth import get_user
+
             # Intentar autenticación JWT desde query parameters
             query_string = scope.get('query_string', b'').decode()
             query_params = parse_qs(query_string)
@@ -52,6 +54,8 @@ class JWTAuthMiddleware(BaseMiddleware):
 
         except Exception as e:
             logger.error(f'❌ WS middleware error: {str(e)[:100]}')
+            # Import aquí también por si acaso
+            from django.contrib.auth.models import AnonymousUser
             scope['user'] = AnonymousUser()
 
         return await self.inner(scope, receive, send)
