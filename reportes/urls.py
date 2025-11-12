@@ -6,6 +6,7 @@ from .views import (
     VentasPorCategoriaView,
     VentasPorProductoView,
     TopClientesView,
+    RankingsPerformanceView,
     HealthReportView,
 )
 
@@ -16,5 +17,6 @@ urlpatterns = [
     path('ventas/por-categoria/', VentasPorCategoriaView.as_view(), name='report-ventas-por-categoria'),
     path('ventas/por-producto/', VentasPorProductoView.as_view(), name='report-ventas-por-producto'),
     path('ventas/top-clientes/', TopClientesView.as_view(), name='report-top-clientes'),
+    path('rankings/rendimiento/', RankingsPerformanceView.as_view(), name='report-rankings-rendimiento'),
     path('health/', HealthReportView.as_view(), name='report-health'),
 ]
