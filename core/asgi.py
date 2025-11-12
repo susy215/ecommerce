@@ -18,12 +18,13 @@ os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'core.settings')
 # Importar rutas de WebSocket después de configurar Django
 django_asgi_app = get_asgi_application()
 
-# Importar rutas de WebSocket
+# Importar rutas de WebSocket y middleware personalizado
 from notificaciones.routing import websocket_urlpatterns
+from .middleware import JWTAuthMiddleware
 
 application = ProtocolTypeRouter({
     "http": django_asgi_app,
-    "websocket": AuthMiddlewareStack(
+    "websocket": JWTAuthMiddleware(  # Usar JWT middleware en lugar de AuthMiddlewareStack
         URLRouter(websocket_urlpatterns)
     ),
 })
