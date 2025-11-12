@@ -223,11 +223,9 @@ class AdminNotificationPollingView(APIView):
             usuario=user
         ).order_by('-creada')[:20]
 
-        # Contar no leídas
-        unread_count = NotificacionAdmin.objects.filter(
-            usuario=user,
-            leida=False
-        ).count()
+        # Para polling simple, todas las notificaciones recientes se consideran "no leídas"
+        # El frontend maneja el estado de lectura localmente
+        unread_count = len(notifications)
 
         # Serializar notificaciones
         serializer = NotificacionAdminSerializer(notifications, many=True)
