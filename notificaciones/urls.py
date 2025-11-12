@@ -17,8 +17,11 @@ router.register(r'historial', NotificacionHistorialViewSet, basename='notificaci
 router.register(r'admin', NotificacionAdminViewSet, basename='notificacion-admin')
 
 urlpatterns = [
-    path('', include(router.urls)),
-    path('vapid-public-key/', VAPIDPublicKeyView.as_view(), name='vapid-public-key'),
+    # 🔝 RUTAS ESPECÍFICAS PRIMERO
     path('admin/polling/', AdminNotificationPollingView.as_view(), name='admin-notifications-polling'),
+    path('vapid-public-key/', VAPIDPublicKeyView.as_view(), name='vapid-public-key'),
+
+    # 🔽 ROUTER CON RUTAS DINÁMICAS DESPUÉS
+    path('', include(router.urls)),
 ]
 
