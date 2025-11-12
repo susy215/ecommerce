@@ -1,322 +1,240 @@
-# 🔔 Notificaciones WebSocket en Tiempo Real - Documentación Frontend
+# 🔔 Notificaciones para Admin Web - Documentación Frontend
 
 ## 📋 **RESUMEN EJECUTIVO**
 
-Este documento explica cómo integrar **notificaciones WebSocket en tiempo real** en tu aplicación React/Vite para administradores. Las notificaciones llegan instantáneamente sin necesidad de refrescar la página.
+Este documento explica cómo integrar **notificaciones para administradores** en tu aplicación React/Vite. Similar a tus push notifications PWA, pero para el panel de administración web.
 
 ## 🎯 **LO QUE LOGRARÁS**
 
-- ✅ **Notificaciones instantáneas** cuando ocurren ventas, pagos, etc.
+- ✅ **Notificaciones cada 30 segundos** (polling simple)
+- ✅ **Mismo sistema de push** que tu PWA
 - ✅ **Badge en tiempo real** con conteo de notificaciones no leídas
 - ✅ **Lista de notificaciones** actualizada automáticamente
 - ✅ **Sonido opcional** para alertas importantes
-- ✅ **Compatibilidad** con autenticación JWT
+- ✅ **Sin configuración compleja** de WebSocket
 
 ## 🔧 **PRERREQUISITOS**
 
 ### Backend Configurado
-- ✅ Daphne corriendo en puerto 8000
-- ✅ Django Channels instalado
-- ✅ Nginx configurado para WebSocket upgrades
-- ✅ Middleware JWT implementado
+- ✅ **Django REST Framework** instalado
+- ✅ **Notificaciones admin** ya funcionando (envían automáticamente)
+- ✅ **Endpoint de polling** creado (`/api/notificaciones/admin/polling/`)
 
 ### Frontend Dependencias
 ```bash
-npm install reconnecting-websocket
+# Ninguna adicional - usa fetch() nativo
 ```
 
-## 🌐 **URL DEL WEBSOCKET**
+## 🌐 **URL DE LA API**
 
 ```javascript
-// URL de producción
-const WS_URL = 'wss://smartsales365.duckdns.org/ws/admin/notifications';
+// Endpoint para polling de notificaciones
+const API_URL = '/api/notificaciones/admin/polling/';
 
-// Para desarrollo local
-const WS_LOCAL_URL = 'ws://localhost:8000/ws/admin/notifications';
+// Endpoint para marcar como leída
+const MARK_READ_URL = (id) => `/api/notificaciones/admin/${id}/`;
 ```
 
 ## 🔐 **AUTENTICACIÓN**
 
-Las conexiones WebSocket requieren **token JWT** en los parámetros de consulta:
+Usa **Bearer token** en headers (igual que tus otras APIs):
 
 ```javascript
-// Obtener token del localStorage
-const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-
-// Construir URL con token
-const wsUrl = `${WS_URL}?token=${token}`;
+// Headers de autenticación
+const headers = {
+  'Authorization': `Bearer ${localStorage.getItem('token')}`,
+  'Content-Type': 'application/json',
+};
 ```
 
 ## 📝 **IMPLEMENTACIÓN COMPLETA**
 
-### **Hook personalizado: `useAdminNotifications.js`**
+### **Hook personalizado: `useAdminNotificationsPolling.js`**
 
 ```javascript
-import { useState, useEffect, useRef, useCallback } from 'react';
-import ReconnectingWebSocket from 'reconnecting-websocket';
+/**
+ * Hook simple para notificaciones de admin usando polling HTTP.
+ * Similar a las push notifications PWA pero para web admin.
+ *
+ * Ventajas:
+ * - ✅ Muy simple de implementar
+ * - ✅ Usa tu backend actual
+ * - ✅ No requiere configuración compleja
+ * - ✅ Funciona igual que las push notifications
+ */
 
-// Configuración del WebSocket
-const WS_URL = 'wss://smartsales365.duckdns.org/ws/admin/notifications';
+import { useState, useEffect, useCallback } from 'react';
 
-export const useAdminNotifications = () => {
+export const useAdminNotificationsPolling = () => {
   const [notifications, setNotifications] = useState([]);
   const [unreadCount, setUnreadCount] = useState(0);
-  const [isConnected, setIsConnected] = useState(false);
-  const [connectionStatus, setConnectionStatus] = useState('Desconectado');
-  const ws = useRef(null);
+  const [isLoading, setIsLoading] = useState(false);
+  const [lastChecked, setLastChecked] = useState(null);
+  const [error, setError] = useState(null);
 
-  // Construir URL con token de autenticación
-  const getWebSocketUrl = useCallback(() => {
+  // Obtener headers de autenticación
+  const getAuthHeaders = useCallback(() => {
     const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-    if (!token) {
-      console.warn('⚠️ No hay token JWT para WebSocket');
-      return null;
-    }
-    return `${WS_URL}?token=${token}`;
+    return {
+      'Authorization': `Bearer ${token}`,
+      'Content-Type': 'application/json',
+    };
   }, []);
 
-  // Conectar WebSocket
-  const connect = useCallback(() => {
-    const wsUrl = getWebSocketUrl();
-    if (!wsUrl) {
-      console.error('❌ No se puede conectar WebSocket: no hay token JWT');
-      setConnectionStatus('Error: Sin autenticación');
-      return;
-    }
+  // Verificar nuevas notificaciones
+  const checkNotifications = useCallback(async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-    if (ws.current) {
-      ws.current.close();
-    }
+      const response = await fetch('/api/notificaciones/admin/polling/', {
+        method: 'GET',
+        headers: getAuthHeaders(),
+      });
 
-    ws.current = new ReconnectingWebSocket(wsUrl, [], {
-      maxReconnectionDelay: 10000,
-      minReconnectionDelay: 1000,
-      reconnectionDelayGrowFactor: 1.3,
-      maxRetries: Infinity,
-      debug: false,
-    });
+      if (response.ok) {
+        const data = await response.json();
 
-    ws.current.onopen = () => {
-      console.log('✅ WebSocket conectado');
-      setIsConnected(true);
-      setConnectionStatus('Conectado');
-    };
+        // Si hay nuevas notificaciones (comparar con las existentes)
+        const currentIds = new Set(notifications.map(n => n.id));
+        const newNotifications = data.notifications.filter(n => !currentIds.has(n.id));
 
-    ws.current.onclose = () => {
-      console.log('❌ WebSocket desconectado');
-      setIsConnected(false);
-      setConnectionStatus('Desconectado');
-    };
+        // Mostrar notificaciones push para las nuevas (igual que PWA)
+        if (newNotifications.length > 0 && 'Notification' in window) {
+          // Pedir permiso si no está concedido
+          if (Notification.permission === 'default') {
+            await Notification.requestPermission();
+          }
 
-    ws.current.onerror = (error) => {
-      console.error('WebSocket error:', error);
-      setConnectionStatus('Error de conexión');
-    };
+          // Mostrar notificaciones si está permitido
+          if (Notification.permission === 'granted') {
+            newNotifications.forEach(notification => {
+              new Notification(notification.titulo, {
+                body: notification.mensaje,
+                icon: '/admin-icon.png',
+                badge: '/badge-72x72.png',
+                tag: `admin-${notification.id}`, // Evita duplicados
+                data: notification.datos,
+              });
+            });
 
-    ws.current.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-        handleMessage(data);
-      } catch (error) {
-        console.error('Error parsing WebSocket message:', error);
-      }
-    };
-  }, [getWebSocketUrl]);
-
-  // Manejar mensajes del WebSocket
-  const handleMessage = useCallback((data) => {
-    switch (data.type) {
-      case 'connection_established':
-        console.log('Conexión establecida:', data.message);
-        setConnectionStatus('Conectado');
-        break;
-
-      case 'notification':
-        // Nueva notificación recibida
-        const newNotification = {
-          id: data.id,
-          tipo: data.tipo,
-          titulo: data.titulo,
-          mensaje: data.mensaje,
-          url: data.url,
-          datos: data.datos,
-          creada: data.creada,
-          leida: false, // Las nuevas notificaciones no están leídas
-        };
-
-        setNotifications(prev => [newNotification, ...prev]);
-        setUnreadCount(prev => prev + 1);
-
-        // Mostrar notificación del navegador si es soportado
-        if ('Notification' in window && Notification.permission === 'granted') {
-          new Notification(data.titulo, {
-            body: data.mensaje,
-            icon: '/icon-192x192.png',
-            badge: '/badge-72x72.png',
-            data: data.datos,
-          });
+            // Reproducir sonido opcional
+            playNotificationSound();
+          }
         }
 
-        // Reproducir sonido (opcional)
-        playNotificationSound();
+        // Actualizar estado
+        setNotifications(data.notifications);
+        setUnreadCount(data.unread_count);
+        setLastChecked(new Date());
 
-        break;
+      } else if (response.status === 401) {
+        setError('No autorizado - verifica tu sesión');
+      } else if (response.status === 403) {
+        setError('No tienes permisos de administrador');
+      } else {
+        setError(`Error del servidor: ${response.status}`);
+      }
 
-      case 'unread_count':
-        setUnreadCount(data.count);
-        break;
-
-      case 'pong':
-        // Respuesta a ping - conexión viva
-        break;
-
-      case 'error':
-        console.error('WebSocket error:', data.message);
-        break;
-
-      default:
-        console.log('Mensaje WebSocket desconocido:', data);
+    } catch (error) {
+      console.error('Error checking notifications:', error);
+      setError('Error de conexión');
+    } finally {
+      setIsLoading(false);
     }
-  }, []);
+  }, [notifications, getAuthHeaders]);
 
-  // Función para reproducir sonido de notificación
+  // Función para reproducir sonido
   const playNotificationSound = useCallback(() => {
     try {
       const audio = new Audio('/notification-sound.mp3');
-      audio.volume = 0.5;
-      audio.play().catch(e => console.log('No se pudo reproducir sonido:', e));
+      audio.volume = 0.3; // Más bajo que las push notifications
+      audio.play().catch(e => {
+        console.log('Sonido no disponible:', e.message);
+      });
     } catch (e) {
-      console.log('Sonido no disponible');
-    }
-  }, []);
-
-  // Enviar ping para mantener conexión viva
-  const sendPing = useCallback(() => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ type: 'ping' }));
+      console.log('Sonido no soportado');
     }
   }, []);
 
   // Marcar notificación como leída
-  const markAsRead = useCallback((notificationId) => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({
-        type: 'mark_read',
-        notification_id: notificationId,
-      }));
+  const markAsRead = useCallback(async (notificationId) => {
+    try {
+      const response = await fetch(`/api/notificaciones/admin/${notificationId}/`, {
+        method: 'PATCH',
+        headers: getAuthHeaders(),
+        body: JSON.stringify({ leida: true }),
+      });
+
+      if (response.ok) {
+        // Actualizar estado local
+        setNotifications(prev =>
+          prev.map(notif =>
+            notif.id === notificationId
+              ? { ...notif, leida: true }
+              : notif
+          )
+        );
+        setUnreadCount(prev => Math.max(0, prev - 1));
+      }
+    } catch (error) {
+      console.error('Error marking notification as read:', error);
+    }
+  }, [getAuthHeaders]);
+
+  // Marcar todas como leídas
+  const markAllAsRead = useCallback(async () => {
+    try {
+      // Actualizar todas las notificaciones como leídas
+      const unreadNotifications = notifications.filter(n => !n.leida);
+
+      for (const notification of unreadNotifications) {
+        await fetch(`/api/notificaciones/admin/${notification.id}/`, {
+          method: 'PATCH',
+          headers: getAuthHeaders(),
+          body: JSON.stringify({ leida: true }),
+        });
+      }
 
       // Actualizar estado local
       setNotifications(prev =>
-        prev.map(notif =>
-          notif.id === notificationId
-            ? { ...notif, leida: true }
-            : notif
-        )
+        prev.map(notif => ({ ...notif, leida: true }))
       );
-      setUnreadCount(prev => Math.max(0, prev - 1));
-    }
-  }, []);
+      setUnreadCount(0);
 
-  // Obtener conteo de no leídas
-  const getUnreadCount = useCallback(() => {
-    if (ws.current && ws.current.readyState === WebSocket.OPEN) {
-      ws.current.send(JSON.stringify({ type: 'get_unread_count' }));
+    } catch (error) {
+      console.error('Error marking all as read:', error);
     }
-  }, []);
-
-  // Limpiar conexión
-  const disconnect = useCallback(() => {
-    if (ws.current) {
-      ws.current.close();
-      ws.current = null;
-    }
-    setIsConnected(false);
-    setConnectionStatus('Desconectado');
-  }, []);
+  }, [notifications, getAuthHeaders]);
 
   // Efectos
   useEffect(() => {
-    connect();
+    // Verificar inmediatamente al montar
+    checkNotifications();
 
-    // Ping cada 30 segundos para mantener conexión viva
-    const pingInterval = setInterval(sendPing, 30000);
+    // Luego cada 30 segundos
+    const interval = setInterval(checkNotifications, 30000); // 30 segundos
 
-    return () => {
-      clearInterval(pingInterval);
-      disconnect();
-    };
-  }, [connect, sendPing, disconnect]);
+    return () => clearInterval(interval);
+  }, [checkNotifications]);
 
-  // Reconectar cuando cambie el token (usuario se loguea)
+  // Limpiar error después de 5 segundos
   useEffect(() => {
-    const handleStorageChange = () => {
-      const newToken = localStorage.getItem('token') || localStorage.getItem('auth_token');
-      if (newToken && !ws.current) {
-        console.log('🔄 Token encontrado, conectando WebSocket...');
-        connect();
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-
-    // Intentar conectar inicialmente si hay token
-    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-    if (token && !ws.current) {
-      connect();
+    if (error) {
+      const timeout = setTimeout(() => setError(null), 5000);
+      return () => clearTimeout(timeout);
     }
-
-    return () => {
-      window.removeEventListener('storage', handleStorageChange);
-    };
-  }, [connect]);
-
-  // Cleanup al desmontar
-  useEffect(() => {
-    return () => {
-      disconnect();
-    };
-  }, [disconnect]);
-
-  // Solicitar permisos de notificación al montar
-  useEffect(() => {
-    if ('Notification' in window && Notification.permission === 'default') {
-      Notification.requestPermission();
-    }
-  }, []);
-
-  // Función de debug para consola del navegador
-  const debugWebSocket = useCallback(() => {
-    const token = localStorage.getItem('token') || localStorage.getItem('auth_token');
-    const wsUrl = getWebSocketUrl();
-
-    console.log('🔍 Debug WebSocket:');
-    console.log('- Token JWT:', token ? `${token.substring(0, 20)}...` : '❌ No encontrado');
-    console.log('- URL WebSocket:', wsUrl);
-    console.log('- Estado conexión:', isConnected ? '✅ Conectado' : '❌ Desconectado');
-    console.log('- Estado detallado:', connectionStatus);
-    console.log('- Notificaciones:', notifications.length);
-    console.log('- No leídas:', unreadCount);
-
-    return {
-      token: !!token,
-      wsUrl,
-      isConnected,
-      connectionStatus,
-      notificationCount: notifications.length,
-      unreadCount
-    };
-  }, [isConnected, connectionStatus, notifications.length, unreadCount, getWebSocketUrl]);
+  }, [error]);
 
   return {
     notifications,
     unreadCount,
-    isConnected,
-    connectionStatus,
+    isLoading,
+    lastChecked,
+    error,
     markAsRead,
-    getUnreadCount,
-    sendPing,
-    reconnect: connect,
-    debugWebSocket,
+    markAllAsRead,
+    refresh: checkNotifications,
   };
 };
 ```

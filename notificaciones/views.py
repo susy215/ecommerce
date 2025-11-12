@@ -169,3 +169,73 @@ class NotificacionAdminViewSet(viewsets.ModelViewSet):
         serializer.save()
 
 
+class AdminNotificationPollingView(APIView):
+    """
+    Endpoint simple para polling de notificaciones de admin.
+    Retorna notificaciones recientes y conteo de no leídas.
+    """
+    permission_classes = [permissions.IsAuthenticated]
+
+    @extend_schema(
+        summary='Obtener notificaciones del admin (polling)',
+        description='Retorna las notificaciones recientes del administrador con conteo de no leídas',
+        responses={
+            200: {
+                'description': 'Notificaciones del admin',
+                'examples': [
+                    {
+                        'name': 'Respuesta exitosa',
+                        'value': {
+                            'notifications': [
+                                {
+                                    'id': 1,
+                                    'tipo': 'nueva_compra',
+                                    'titulo': '🛒 Nueva Compra Realizada',
+                                    'mensaje': 'Juan Pérez realizó una compra de $899.99',
+                                    'url': '/admin/ventas/123',
+                                    'datos': {'compra_id': 123, 'cliente_id': 456},
+                                    'creada': '2025-11-12T22:30:00Z',
+                                    'leida': False
+                                }
+                            ],
+                            'unread_count': 3,
+                            'total_count': 15
+                        }
+                    }
+                ]
+            }
+        },
+        tags=['Notificaciones Admin']
+    )
+    def get(self, request):
+        """Retorna notificaciones del admin para polling"""
+        user = request.user
+
+        # Verificar permisos de admin/vendedor
+        if user.rol not in ['admin', 'vendedor']:
+            return Response(
+                {'error': 'No autorizado'},
+                status=status.HTTP_403_FORBIDDEN
+            )
+
+        # Obtener notificaciones recientes (últimas 20)
+        notifications = NotificacionAdmin.objects.filter(
+            usuario=user
+        ).order_by('-creada')[:20]
+
+        # Contar no leídas
+        unread_count = NotificacionAdmin.objects.filter(
+            usuario=user,
+            leida=False
+        ).count()
+
+        # Serializar notificaciones
+        serializer = NotificacionAdminSerializer(notifications, many=True)
+
+        return Response({
+            'notifications': serializer.data,
+            'unread_count': unread_count,
+            'total_count': len(serializer.data)
+        })
+
+

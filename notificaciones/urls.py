@@ -7,7 +7,8 @@ from .views import (
     PushSubscriptionViewSet,
     VAPIDPublicKeyView,
     NotificacionHistorialViewSet,
-    NotificacionAdminViewSet
+    NotificacionAdminViewSet,
+    AdminNotificationPollingView
 )
 
 router = DefaultRouter()
@@ -18,5 +19,6 @@ router.register(r'admin', NotificacionAdminViewSet, basename='notificacion-admin
 urlpatterns = [
     path('', include(router.urls)),
     path('vapid-public-key/', VAPIDPublicKeyView.as_view(), name='vapid-public-key'),
+    path('admin/polling/', AdminNotificationPollingView.as_view(), name='admin-notifications-polling'),
 ]
 
