@@ -21,7 +21,7 @@ import json
 # Importar módulos existentes
 from ia.interprete import InterpretadorPrompt, GeneradorConsultas
 from ia.generador_reportes import GeneradorReportes
-from ia.modelo_ml import ModeloMLVentas
+from ia.modelo_ml import ModeloPrediccionVentas
 from reportes.views import RankingsPerformanceView
 from compra.models import Compra, CompraItem
 from productos.models import Producto
@@ -246,7 +246,7 @@ class ReportesDinamicosAvanzadosView(APIView):
     def _generar_reporte_prediccion(self, dias_prediccion, interpretacion):
         """Genera reporte con predicciones ML"""
         try:
-            modelo = ModeloMLVentas()
+            modelo = ModeloPrediccionVentas()
 
             # Obtener predicciones
             predicciones_result = modelo.predecir(dias_futuros=dias_prediccion)
@@ -284,7 +284,7 @@ class ReportesDinamicosAvanzadosView(APIView):
             )
 
             # Obtener predicciones
-            modelo = ModeloMLVentas()
+            modelo = ModeloPrediccionVentas()
             predicciones_result = modelo.predecir(dias_futuros=dias_prediccion)
 
             datos = {
@@ -308,7 +308,7 @@ class ReportesDinamicosAvanzadosView(APIView):
             rankings_data = rankings_view.get(None).data
 
             # Analizar con ML
-            modelo = ModeloMLVentas()
+            modelo = ModeloPrediccionVentas()
 
             # Agregar análisis predictivo a los rankings
             productos_analisis = []
@@ -344,7 +344,7 @@ class ReportesDinamicosAvanzadosView(APIView):
             )
 
             # Obtener predicciones
-            modelo = ModeloMLVentas()
+            modelo = ModeloPrediccionVentas()
             predicciones_result = modelo.predecir(dias_futuros=dias_prediccion)
 
             # Calcular insights
