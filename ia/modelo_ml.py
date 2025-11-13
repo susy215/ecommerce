@@ -75,8 +75,7 @@ class ModeloPrediccionVentas:
             fecha__date__gte=inicio
         ).values('fecha__date').annotate(
             total=Sum('total'),
-            cantidad=Count('id'),
-            promedio=Avg('total')
+            cantidad=Count('id')
         ).order_by('fecha__date')
         
         if len(compras) < 7:
