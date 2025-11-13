@@ -101,13 +101,17 @@ class ModeloPrediccionVentas:
         df = pd.DataFrame(list(compras))
         df['fecha'] = pd.to_datetime(df['fecha__date'])
         df = df.sort_values('fecha').reset_index(drop=True)
-        
+
+        # Convertir Decimal a float para evitar errores de tipos
+        df['total'] = df['total'].astype(float)
+        df['cantidad'] = df['cantidad'].astype(float)
+
         # Crear features temporales
         df['dia_semana'] = df['fecha'].dt.dayofweek  # 0=Lunes, 6=Domingo
         df['dia_mes'] = df['fecha'].dt.day
         df['mes'] = df['fecha'].dt.month
         df['dia_anio'] = df['fecha'].dt.dayofyear
-        
+
         # Features de ventana móvil (últimos 7 días)
         df['media_movil_7'] = df['total'].rolling(window=7, min_periods=1).mean()
         df['std_movil_7'] = df['total'].rolling(window=7, min_periods=1).std().fillna(0)
@@ -291,6 +295,9 @@ class ModeloPrediccionVentas:
             if len(df_hist) > 0:
                 df_hist['fecha'] = pd.to_datetime(df_hist['fecha__date'])
                 df_hist = df_hist.sort_values('fecha').reset_index(drop=True)
+                # Convertir Decimal a float
+                df_hist['total'] = df_hist['total'].astype(float)
+                df_hist['cantidad'] = df_hist['cantidad'].astype(float)
                 media_movil = df_hist['total'].mean()
                 std_movil = df_hist['total'].std() if len(df_hist) > 1 else 0
                 cantidad_prom = df_hist['cantidad'].mean()
