@@ -106,23 +106,39 @@ class ReportesDinamicosService {
   static const String _baseUrl = 'https://smartsales365.duckdns.org';
   static const String _endpoint = '/api/reportes-dinamicos/avanzados/';
 
-  /// Genera un reporte dinámico
+  /// Genera un reporte dinámico (soporta GET y POST)
   static Future<ReporteResponse> generarReporte({
     required String prompt,
     String formato = 'pantalla',
     int diasPrediccion = 30,
     bool incluirInsights = true,
+    bool usarPost = false, // Cambiar a true para usar POST en lugar de GET
   }) async {
     try {
       final headers = await AuthService.getAuthHeaders();
-      final uri = Uri.parse('$_baseUrl$_endpoint').replace(queryParameters: {
-        'prompt': prompt,
-        'formato': formato,
-        'dias_prediccion': diasPrediccion.toString(),
-        'incluir_insights': incluirInsights.toString(),
-      });
 
-      final response = await http.get(uri, headers: headers);
+      if (usarPost) {
+        // Usar POST para datos complejos o aplicaciones móviles
+        final uri = Uri.parse('$_baseUrl$_endpoint');
+        final body = json.encode({
+          'prompt': prompt,
+          'formato': formato,
+          'dias_prediccion': diasPrediccion,
+          'incluir_insights': incluirInsights,
+        });
+
+        final response = await http.post(uri, headers: headers, body: body);
+      } else {
+        // Usar GET (recomendado para navegación web)
+        final uri = Uri.parse('$_baseUrl$_endpoint').replace(queryParameters: {
+          'prompt': prompt,
+          'formato': formato,
+          'dias_prediccion': diasPrediccion.toString(),
+          'incluir_insights': incluirInsights.toString(),
+        });
+
+        final response = await http.get(uri, headers: headers);
+      }
 
       if (response.statusCode == 200) {
         final data = json.decode(response.body);

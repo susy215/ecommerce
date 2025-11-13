@@ -44,6 +44,22 @@ class ReportesDinamicosAvanzadosView(APIView):
     @extend_schema(
         summary='Generar reporte dinámico avanzado con IA y ML',
         description='''
+        **Soporta tanto GET como POST para máxima compatibilidad**
+
+        **GET (recomendado para navegación web):**
+        /api/reportes-dinamicos/avanzados/?prompt=Predice%20ventas&formato=pdf
+
+        **POST (para aplicaciones móviles o datos complejos):**
+        ```json
+        {
+            "prompt": "Predice ventas para diciembre",
+            "formato": "pdf",
+            "dias_prediccion": 30,
+            "incluir_insights": true
+        }
+        ```
+
+        ''
         Genera reportes dinámicos avanzados combinando IA y Machine Learning.
 
         **Ejemplos de consultas avanzadas:**
@@ -133,13 +149,27 @@ class ReportesDinamicosAvanzadosView(APIView):
         tags=['Reportes Dinámicos Avanzados']
     )
     def get(self, request):
-        """Genera reporte dinámico avanzado"""
+        """Genera reporte dinámico avanzado vía GET"""
+        return self._procesar_reporte(request, method='GET')
+
+    def post(self, request):
+        """Genera reporte dinámico avanzado vía POST (para compatibilidad)"""
+        return self._procesar_reporte(request, method='POST')
+
+    def _procesar_reporte(self, request, method='GET'):
+        """Método común para procesar reportes (GET y POST)"""
         try:
-            # Obtener parámetros
-            prompt = request.query_params.get('prompt', '').strip()
-            formato = request.query_params.get('formato', 'pantalla').lower()
-            dias_prediccion = int(request.query_params.get('dias_prediccion', 30))
-            incluir_insights = request.query_params.get('incluir_insights', 'true').lower() == 'true'
+            # Obtener parámetros según el método
+            if method == 'GET':
+                prompt = request.query_params.get('prompt', '').strip()
+                formato = request.query_params.get('formato', 'pantalla').lower()
+                dias_prediccion = int(request.query_params.get('dias_prediccion', 30))
+                incluir_insights = request.query_params.get('incluir_insights', 'true').lower() == 'true'
+            else:  # POST
+                prompt = request.data.get('prompt', '').strip()
+                formato = request.data.get('formato', 'pantalla').lower()
+                dias_prediccion = int(request.data.get('dias_prediccion', 30))
+                incluir_insights = request.data.get('incluir_insights', True)
 
             if not prompt:
                 return Response(
