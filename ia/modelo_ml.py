@@ -78,8 +78,8 @@ class ModeloPrediccionVentas:
             cantidad=Count('id')
         ).order_by('fecha__date')
         
-        if len(compras) < 7:
-            logger.warning(f"Solo {len(compras)} días de datos. Se necesitan al menos 7 días.")
+        if len(compras) < 3:
+            logger.warning(f"Solo {len(compras)} días de datos. Se necesitan al menos 3 días.")
             return None
         
         # Convertir a DataFrame
@@ -142,11 +142,11 @@ class ModeloPrediccionVentas:
             
             X, y, df = resultado
             
-            if len(X) < 10:
-                return {
-                    'success': False,
-                    'error': f'Solo {len(X)} muestras disponibles. Se necesitan al menos 10.'
-                }
+                if len(X) < 3:
+                    return {
+                        'success': False,
+                        'error': f'Solo {len(X)} muestras disponibles. Se necesitan al menos 3.'
+                    }
             
             # Dividir en train/test
             X_train, X_test, y_train, y_test = train_test_split(

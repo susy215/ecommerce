@@ -54,11 +54,11 @@ class Command(BaseCommand):
             return
 
         # Verificar que hay suficientes datos
-        if len(df) < 10:
+        if len(df) < 3:
             self.stdout.write(
                 self.style.ERROR(
                     f'❌ Insuficientes datos para entrenar. '
-                    f'Solo {len(df)} registros. Necesitas al menos 10.'
+                    f'Solo {len(df)} registros. Necesitas al menos 3.'
                 )
             )
             return
