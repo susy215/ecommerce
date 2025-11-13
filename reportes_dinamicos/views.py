@@ -178,8 +178,8 @@ class ReportesDinamicosAvanzadosView(APIView):
                 )
 
             # 1. Interpretar consulta con IA
-            interprete = InterpretadorPrompt()
-            interpretacion = interprete.interpretar(prompt)
+            interprete = InterpretadorPrompt(prompt)
+            interpretacion = interprete.interpretar()
 
             if not interpretacion.get('success'):
                 return Response(
