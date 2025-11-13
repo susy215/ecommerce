@@ -109,7 +109,7 @@ class ModeloPrediccionVentas:
         # Seleccionar features
         feature_cols = [
             'dia_semana', 'dia_mes', 'mes', 'dia_anio',
-            'media_movil_7', 'std_movil_7', 'cantidad', 'promedio'
+            'media_movil_7', 'std_movil_7', 'cantidad'
         ]
         
         X = df[feature_cols].values
@@ -233,8 +233,7 @@ class ModeloPrediccionVentas:
                 fecha__date__lt=fecha_inicio
             ).values('fecha__date').annotate(
                 total=Sum('total'),
-                cantidad=Count('id'),
-                promedio=Avg('total')
+                cantidad=Count('id')
             ).order_by('fecha__date')
             
             # Preparar datos históricos para calcular features
@@ -245,13 +244,11 @@ class ModeloPrediccionVentas:
                 media_movil = df_hist['total'].mean()
                 std_movil = df_hist['total'].std() if len(df_hist) > 1 else 0
                 cantidad_prom = df_hist['cantidad'].mean()
-                promedio_prom = df_hist['promedio'].mean()
             else:
                 # Valores por defecto si no hay historial
                 media_movil = 0
                 std_movil = 0
                 cantidad_prom = 0
-                promedio_prom = 0
             
             predicciones = []
             
@@ -266,8 +263,7 @@ class ModeloPrediccionVentas:
                     fecha_pred.timetuple().tm_yday,  # dia_anio
                     media_movil,  # media_movil_7
                     std_movil,  # std_movil_7
-                    cantidad_prom,  # cantidad
-                    promedio_prom  # promedio
+                    cantidad_prom  # cantidad
                 ]])
                 
                 # Predecir
