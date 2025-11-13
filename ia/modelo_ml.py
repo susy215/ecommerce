@@ -70,8 +70,17 @@ class ModeloPrediccionVentas:
         # Asegurar que dias_historico sea un entero
         if isinstance(dias_historico, (tuple, list)):
             dias_historico = int(dias_historico[0]) if dias_historico else 90
+        elif hasattr(dias_historico, '__len__') and not isinstance(dias_historico, str):
+            # Manejar arrays de numpy u otros tipos de secuencia
+            try:
+                dias_historico = int(dias_historico.item()) if hasattr(dias_historico, 'item') else int(dias_historico[0])
+            except (IndexError, TypeError):
+                dias_historico = 90
         else:
-            dias_historico = int(dias_historico)
+            try:
+                dias_historico = int(dias_historico)
+            except (TypeError, ValueError):
+                dias_historico = 90
 
         hoy = timezone.now().date()
         inicio = hoy - timedelta(days=dias_historico)
@@ -138,11 +147,25 @@ class ModeloPrediccionVentas:
             dict con métricas de evaluación
         """
         try:
+            # Debug: mostrar el tipo de dato que llega
+            print(f"DEBUG: dias_historico tipo: {type(dias_historico)}, valor: {dias_historico}")
+
             # Asegurar que dias_historico sea un entero
             if isinstance(dias_historico, (tuple, list)):
                 dias_historico = int(dias_historico[0]) if dias_historico else 90
+            elif hasattr(dias_historico, '__len__') and not isinstance(dias_historico, str):
+                # Manejar arrays de numpy u otros tipos de secuencia
+                try:
+                    dias_historico = int(dias_historico.item()) if hasattr(dias_historico, 'item') else int(dias_historico[0])
+                except (IndexError, TypeError, ValueError):
+                    dias_historico = 90
             else:
-                dias_historico = int(dias_historico)
+                try:
+                    dias_historico = int(float(dias_historico))  # Convertir primero a float por si acaso
+                except (TypeError, ValueError):
+                    dias_historico = 90
+
+            print(f"DEBUG: dias_historico convertido: {dias_historico} (tipo: {type(dias_historico)})")
 
             # Preparar datos
             resultado = self.preparar_datos_entrenamiento(dias_historico)
