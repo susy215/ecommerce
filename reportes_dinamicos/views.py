@@ -415,7 +415,8 @@ class ReportesDinamicosAvanzadosView(APIView):
                     total_predicho = sum(p['total_predicho'] for p in predicciones)
                     promedio_diario = total_predicho / max(len(predicciones), 1)
 
-                    insights.append(".2f"                    insights.append(".2f"
+                    insights.append(f"Total predicho: ${total_predicho:.2f}")
+                    insights.append(f"Promedio diario esperado: ${promedio_diario:.2f}")
                     # Recomendaciones basadas en predicciones
                     if promedio_diario > 500:
                         recomendaciones.append("Alto volumen de ventas esperado - asegurar inventario suficiente")
