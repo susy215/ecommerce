@@ -396,9 +396,11 @@ class ReportesDinamicosAvanzadosView(APIView):
             crecimiento_esperado = ((total_predicho - total_ventas) / max(total_ventas, 1)) * 100
 
             if crecimiento_esperado > 20:
-                insights.append(".1f"            elif crecimiento_esperado < -10:
-                insights.append(".1f"            else:
-                insights.append(".1f"
+                insights.append(f"Crecimiento esperado positivo del {crecimiento_esperado:.1f}% para el próximo período")
+            elif crecimiento_esperado < -10:
+                insights.append(f"Posible disminución del {abs(crecimiento_esperado):.1f}% en ventas")
+            else:
+                insights.append(f"Crecimiento esperado estable del {crecimiento_esperado:.1f}%")
         return insights
 
     def _generar_insights_ml(self, datos, tipo_consulta, dias_prediccion):
