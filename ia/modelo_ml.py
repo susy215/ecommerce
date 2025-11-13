@@ -147,9 +147,6 @@ class ModeloPrediccionVentas:
             dict con métricas de evaluación
         """
         try:
-            # Debug: mostrar el tipo de dato que llega
-            print(f"DEBUG: dias_historico tipo: {type(dias_historico)}, valor: {dias_historico}")
-
             # Asegurar que dias_historico sea un entero
             if isinstance(dias_historico, (tuple, list)):
                 dias_historico = int(dias_historico[0]) if dias_historico else 90
@@ -164,8 +161,6 @@ class ModeloPrediccionVentas:
                     dias_historico = int(float(dias_historico))  # Convertir primero a float por si acaso
                 except (TypeError, ValueError):
                     dias_historico = 90
-
-            print(f"DEBUG: dias_historico convertido: {dias_historico} (tipo: {type(dias_historico)})")
 
             # Preparar datos
             resultado = self.preparar_datos_entrenamiento(dias_historico)

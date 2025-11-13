@@ -66,7 +66,11 @@ class Command(BaseCommand):
         # Entrenar modelo
         self.stdout.write('🤖 Entrenando modelo RandomForestRegressor...')
         try:
-            resultado = modelo.entrenar(df)
+            resultado = modelo.entrenar(
+                dias_historico=options['dias_historico'],
+                test_size=0.2,
+                random_state=42
+            )
             if resultado.get('success'):
                 train_r2 = resultado.get('train_r2', 0)
                 test_r2 = resultado.get('test_r2', 0)
