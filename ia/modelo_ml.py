@@ -141,12 +141,12 @@ class ModeloPrediccionVentas:
                 }
             
             X, y, df = resultado
-            
-                if len(X) < 3:
-                    return {
-                        'success': False,
-                        'error': f'Solo {len(X)} muestras disponibles. Se necesitan al menos 3.'
-                    }
+
+            if len(X) < 3:
+                return {
+                    'success': False,
+                    'error': f'Solo {len(X)} muestras disponibles. Se necesitan al menos 3.'
+                }
             
             # Dividir en train/test
             X_train, X_test, y_train, y_test = train_test_split(
