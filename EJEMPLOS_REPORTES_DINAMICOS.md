@@ -103,6 +103,55 @@ curl -H "Authorization: Bearer $TOKEN" \
      -o "resumen_semanal.pdf"
 ```
 
+## 📱 **Ejemplos con Método POST (Apps Móviles)**
+
+### Ventajas del método POST:
+- ✅ Mejor para datos complejos
+- ✅ No limitación de longitud de URL
+- ✅ Más seguro para datos sensibles
+- ✅ Recomendado para aplicaciones móviles
+
+### 1. **Predicción de Ventas Completa**
+```bash
+curl -H "Authorization: Bearer TU_TOKEN" \
+     -H "Content-Type: application/json" \
+     -X POST "https://smartsales365.duckdns.org/api/reportes-dinamicos/avanzados/" \
+     -d '{
+       "prompt": "Predice las ventas para el próximo mes y compáralas con el mes pasado",
+       "formato": "pdf",
+       "dias_prediccion": 30,
+       "incluir_insights": true
+     }' \
+     -o "prediccion_completa.pdf"
+```
+
+### 2. **Análisis Ejecutivo con POST**
+```bash
+curl -H "Authorization: Bearer TU_TOKEN" \
+     -H "Content-Type: application/json" \
+     -X POST "https://smartsales365.duckdns.org/api/reportes-dinamicos/avanzados/" \
+     -d '{
+       "prompt": "Genera un reporte ejecutivo completo con métricas, predicciones e insights",
+       "formato": "excel",
+       "dias_prediccion": 45,
+       "incluir_insights": true
+     }' \
+     -o "reporte_ejecutivo.xlsx"
+```
+
+### 3. **Múltiples Consultas en una Sola Petición**
+```bash
+curl -H "Authorization: Bearer TU_TOKEN" \
+     -H "Content-Type: application/json" \
+     -X POST "https://smartsales365.duckdns.org/api/reportes-dinamicos/avanzados/" \
+     -d '{
+       "prompt": "Análisis completo: productos estrella, clientes más activos, predicciones de temporada y recomendaciones estratégicas",
+       "formato": "pdf",
+       "dias_prediccion": 60,
+       "incluir_insights": true
+     }'
+```
+
 ### 📱 5. Consultas para Visualización Web
 
 #### Datos para Dashboard
