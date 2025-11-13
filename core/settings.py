@@ -65,6 +65,7 @@ INSTALLED_APPS = [
     'ia',
     'clientes',
     'reportes',
+    'reportes_dinamicos',
     'promociones',
     'notificaciones',
 ]

@@ -33,6 +33,7 @@ urlpatterns = [
     path('api/compra/', include('compra.urls')),
     # path('api/ventas/', include('ventas.urls')),  # deshabilitado para evitar confusiones
     path('api/reportes/', include('reportes.urls')),
+    path('api/reportes-dinamicos/', include('reportes_dinamicos.urls')),
     path('api/ia/', include('ia.urls')),
     path('api/promociones/', include('promociones.urls')),
     path('api/notificaciones/', include('notificaciones.urls')),
