@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 import json
 
 # Importar módulos existentes
-from ia.interprete import InterpreteIA
+from ia.interprete import InterpretadorPrompt, GeneradorConsultas
 from ia.generador_reportes import GeneradorReportes
 from ia.modelo_ml import ModeloMLVentas
 from reportes.views import RankingsPerformanceView
@@ -148,7 +148,7 @@ class ReportesDinamicosAvanzadosView(APIView):
                 )
 
             # 1. Interpretar consulta con IA
-            interprete = InterpreteIA()
+            interprete = InterpretadorPrompt()
             interpretacion = interprete.interpretar(prompt)
 
             if not interpretacion.get('success'):
@@ -171,7 +171,8 @@ class ReportesDinamicosAvanzadosView(APIView):
                 datos = self._generar_reporte_ejecutivo_ml(dias_prediccion, interpretacion)
             else:
                 # Usar interpretación estándar para consultas normales
-                datos = interprete.ejecutar_consulta(interpretacion)
+                generador = GeneradorConsultas(interpretacion)
+                datos = generador.generar_consulta()
 
             if not datos.get('success'):
                 return Response(
