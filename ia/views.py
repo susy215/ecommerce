@@ -111,6 +111,43 @@ class ConsultaIAView(APIView):
 		},
 		tags=['IA - Reportes Dinámicos']
 	)
+	def get(self, request):
+		"""
+		⚠️ DEPRECATED: Este endpoint está obsoleto.
+
+		Utiliza en su lugar: GET /api/reportes-dinamicos/avanzados/
+
+		Redirige automáticamente al nuevo endpoint.
+		"""
+		# Extraer parámetros del query string
+		prompt = request.GET.get('prompt', '').strip()
+		formato = request.GET.get('formato', 'pantalla').lower()
+		dias_prediccion = int(request.GET.get('dias_prediccion', 30))
+		incluir_insights = request.GET.get('incluir_insights', 'true').lower() == 'true'
+
+		# Redirigir al nuevo endpoint
+		try:
+			from reportes_dinamicos.views import ReportesDinamicosAvanzadosView
+			view_instance = ReportesDinamicosAvanzadosView()
+
+			# Crear request modificado
+			request.GET = request.GET.copy()
+			request.GET.update({
+				'prompt': prompt,
+				'formato': formato,
+				'dias_prediccion': str(dias_prediccion),
+				'incluir_insights': str(incluir_insights)
+			})
+
+			return view_instance.get(request)
+
+		except Exception as e:
+			return Response({
+				'error': 'Endpoint obsoleto - usa /api/reportes-dinamicos/avanzados/',
+				'nuevo_endpoint': '/api/reportes-dinamicos/avanzados/',
+				'detalle': str(e)
+			}, status=status.HTTP_410_GONE)
+
 	def post(self, request):
 		"""
 		Procesa un prompt y devuelve los datos o genera un archivo
