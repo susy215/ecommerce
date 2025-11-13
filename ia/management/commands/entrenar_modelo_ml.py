@@ -68,14 +68,27 @@ class Command(BaseCommand):
         try:
             resultado = modelo.entrenar(df)
             if resultado.get('success'):
+                train_r2 = resultado.get('train_r2', 0)
+                test_r2 = resultado.get('test_r2', 0)
+                train_rmse = resultado.get('train_rmse', 0)
+                test_rmse = resultado.get('test_rmse', 0)
+
                 self.stdout.write(
                     self.style.SUCCESS(
                         f'✅ Modelo entrenado exitosamente!\n'
-                        f'📈 Precisión (R²): {resultado.get("r2_score", "N/A"):.3f}\n'
-                        f'📊 RMSE: {resultado.get("rmse", "N/A"):.2f}\n'
+                        f'📊 Datos usados: {resultado.get("train_samples", 0)} train, {resultado.get("test_samples", 0)} test\n'
+                        f'📈 Train R²: {train_r2:.3f}, Test R²: {test_r2:.3f}\n'
+                        f'📊 Train RMSE: {train_rmse:.2f}, Test RMSE: {test_rmse:.2f}\n'
                         f'💾 Modelo guardado en: {modelo.MODEL_PATH}'
                     )
                 )
+
+                # Mostrar importancia de features
+                feature_importance = resultado.get('feature_importance', {})
+                if feature_importance:
+                    self.stdout.write('🔍 Importancia de Features:')
+                    for feature, importance in sorted(feature_importance.items(), key=lambda x: x[1], reverse=True):
+                        self.stdout.write(f'   {feature}: {importance:.3f}')
             else:
                 self.stdout.write(
                     self.style.ERROR(
