@@ -15,6 +15,7 @@ from rest_framework import permissions, status
 from rest_framework.decorators import api_view
 from drf_spectacular.utils import extend_schema, OpenApiParameter
 from django.utils import timezone
+from django.db.models import Sum, Count, F, Q, Avg, Max, Min
 from datetime import datetime, timedelta
 import json
 
@@ -181,9 +182,10 @@ class ReportesDinamicosAvanzadosView(APIView):
             interprete = InterpretadorPrompt(prompt)
             interpretacion = interprete.interpretar()
 
-            if not interpretacion.get('success'):
+            # Verificar si la interpretación fue exitosa (tiene tipo_reporte definido)
+            if not interpretacion.get('tipo_reporte'):
                 return Response(
-                    {'error': f'Error al interpretar consulta: {interpretacion.get("error", "Desconocido")}'},
+                    {'error': 'Error al interpretar consulta: No se pudo determinar el tipo de reporte'},
                     status=status.HTTP_400_BAD_REQUEST
                 )
 
