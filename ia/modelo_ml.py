@@ -27,12 +27,34 @@ class ModeloPrediccionVentas:
     """
     Clase para gestionar el modelo de predicción de ventas usando RandomForestRegressor.
     """
-    
+
     def __init__(self):
         self.model = None
         self.feature_names = None
         self.is_trained = False
-    
+        self.MODEL_PATH = MODEL_PATH  # Agregar el path como atributo de instancia
+
+        # Intentar cargar modelo existente
+        self._cargar_modelo()
+
+    def _cargar_modelo(self):
+        """
+        Carga un modelo entrenado si existe
+        """
+        try:
+            if os.path.exists(self.MODEL_PATH):
+                import joblib
+                data = joblib.load(self.MODEL_PATH)
+                self.model = data.get('model')
+                self.feature_names = data.get('feature_names', [])
+                self.is_trained = self.model is not None
+                print(f"✅ Modelo cargado desde {self.MODEL_PATH}")
+            else:
+                print(f"⚠️ No se encontró modelo entrenado en {self.MODEL_PATH}")
+        except Exception as e:
+            print(f"❌ Error cargando modelo: {e}")
+            self.is_trained = False
+
     def preparar_datos_entrenamiento(self, dias_historico=90):
         """
         Prepara los datos históricos de ventas para entrenar el modelo.
